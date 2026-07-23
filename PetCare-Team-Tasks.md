@@ -1,241 +1,507 @@
 # PetCare Platform -- Team Task Breakdown
 
-## Overview
+The main idea is:
 
-This checklist is organized by owner. Each microservice owner is
-responsible for the complete DDD stack (Domain, Application,
-Infrastructure, API, Tests) for their bounded context. Shared
-infrastructure is completed together.
+* Each member owns **their bounded context completely** (Domain → Application → Infrastructure → API → Tests).
+* The **MCP server is a shared integration**, where one member owns the infrastructure and each service owner contributes their own tools.
+* Shared infrastructure has clear primary owners to avoid duplicated work.
 
-------------------------------------------------------------------------
+---
 
-# Member 1 -- Pet Service
+# PetCare Platform – Complete Team Task Breakdown
 
-## 1. Project setup
+## Member 1 — Pet Service
 
--   [ ] Create Pet Service project
--   [ ] Configure dependency injection
--   [ ] Configure EF Core + PostgreSQL
+### 1. Project Setup
 
-## 2. Domain
+* [ ] Create Pet Service solution/project
+* [ ] Configure Clean Architecture projects
 
-### Owner Aggregate
+  * [ ] Domain
+  * [ ] Application
+  * [ ] Infrastructure
+  * [ ] API
+* [ ] Configure Dependency Injection
+* [ ] Configure appsettings
+* [ ] Configure logging
+* [ ] Configure Swagger
+* [ ] Configure EF Core
+* [ ] Configure PostgreSQL connection
+* [ ] Configure Health Checks
 
--   [ ] Create Owner entity
--   [ ] Define invariants
+### 2. Domain Layer
 
-### Pet Aggregate
+#### Owner Aggregate
 
--   [ ] Create Pet entity
--   [ ] Create MicrochipNumber Value Object
--   [ ] Add validation:
-    -   [ ] Required name
-    -   [ ] Valid birth date
-    -   [ ] Valid microchip
-    -   [ ] Allergies
-    -   [ ] Chronic conditions
+* [ ] Create Owner entity
+* [ ] OwnerId
+* [ ] OwnerName
+* [ ] Email
+* [ ] Phone
+* [ ] Address
+* [ ] Owner invariants
 
-## 3. Application
+#### Pet Aggregate
 
--   [ ] Commands
--   [ ] Queries
--   [ ] DTOs
--   [ ] Validators
--   [ ] Mapping
+* [ ] Create Pet entity
+* [ ] PetId
+* [ ] Name
+* [ ] Species
+* [ ] Breed
+* [ ] BirthDate
+* [ ] Weight
+* [ ] Allergies
+* [ ] ChronicConditions
+* [ ] OwnerId reference
 
-## 4. Infrastructure
+##### Value Objects
 
--   [ ] Repositories
--   [ ] DbContext
--   [ ] Migrations / EnsureCreated
--   [ ] Seed data
+* [ ] MicrochipNumber
+* [ ] PetName
+* [ ] Breed (optional VO)
 
-## 5. API
+##### Domain Validation
 
--   [ ] CRUD Owners
--   [ ] CRUD Pets
--   [ ] GET Pet
--   [ ] GET Owner Pets
--   [ ] GET /api/pets/{id}/exists?ownerId=...
+* [ ] Required name
+* [ ] Birth date validation
+* [ ] Microchip validation
+* [ ] Species validation
+* [ ] Weight validation
 
-## 6. Security
+##### Domain Exceptions
 
--   [ ] JWT Authentication
--   [ ] Owner/Admin authorization
+* [ ] PetAlreadyExists
+* [ ] InvalidMicrochip
+* [ ] InvalidBirthDate
+* [ ] OwnerNotFound
 
-## 7. Testing
 
--   [ ] Unit tests
--   [ ] Provider Pact test
--   [ ] Health endpoint
+### 3. Application Layer
 
-------------------------------------------------------------------------
+##### Commands
 
-# Member 2 -- Appointment Service
+* [ ] CreateOwner
+* [ ] UpdateOwner
+* [ ] DeleteOwner
+* [ ] RegisterPet
+* [ ] UpdatePet
+* [ ] DeletePet
 
-## 1. Project setup
+##### Queries
 
--   [ ] Create service
--   [ ] Configure EF Core
--   [ ] Configure PostgreSQL
+* [ ] GetPetById
+* [ ] GetAllPets
+* [ ] GetOwner
+* [ ] GetOwnerPets
+* [ ] CheckPetOwnership
 
-## 2. Domain
+##### DTOs
 
--   [ ] Clinic
--   [ ] Veterinarian
--   [ ] AvailabilitySlot
--   [ ] Appointment
--   [ ] Appointment state transitions
--   [ ] Booking rules
--   [ ] Reschedule rules
--   [ ] Cancel rules
+* [ ] PetDto
+* [ ] OwnerDto
+* [ ] CreatePetRequest
+* [ ] UpdatePetRequest
 
-## 3. Application
+##### Validators
 
--   [ ] Schedule command
--   [ ] Cancel command
--   [ ] Reschedule command
--   [ ] Search available vets
--   [ ] Search slots
+* [ ] FluentValidation validators
+* [ ] Request validation
 
-## 4. Infrastructure
+##### Mapping
 
--   [ ] DbContext
--   [ ] Repositories
--   [ ] Seed clinics
--   [ ] Seed vets
--   [ ] Seed slots
+* [ ] Entity → DTO
+* [ ] DTO → Entity
 
-## 5. REST Integration
+### 4. Infrastructure
 
--   [ ] IPetVerificationClient
--   [ ] PetServiceClient
--   [ ] ACL mapping
--   [ ] Consul discovery
--   [ ] Client Credentials authentication
+* [ ] DbContext
+* [ ] Entity configurations
+* [ ] Repository interfaces
+* [ ] Repository implementations
+* [ ] EF migrations
+* [ ] Seed owners
+* [ ] Seed pets
 
-## 6. Kafka Producer
+### 5. API
 
--   [ ] AppointmentScheduled
--   [ ] AppointmentCancelled
--   [ ] AppointmentRescheduled
+##### Owner Endpoints
 
-## 7. API
+* [ ] POST Owner
+* [ ] GET Owner
+* [ ] GET Owners
+* [ ] PUT Owner
+* [ ] DELETE Owner
 
--   [ ] Search endpoints
--   [ ] Booking endpoint
--   [ ] Cancel endpoint
--   [ ] Reschedule endpoint
+##### Pet Endpoints
 
-## 8. Security
+* [ ] POST Pet
+* [ ] GET Pet
+* [ ] GET Pets
+* [ ] PUT Pet
+* [ ] DELETE Pet
 
--   [ ] JWT
--   [ ] Role authorization
+##### Integration Endpoints
 
-## 9. Testing
+* [ ] GET Owner Pets
+* [ ] GET Pet Exists
+* [ ] GET Health
 
--   [ ] Consumer Pact tests
--   [ ] Health endpoint
 
-------------------------------------------------------------------------
+### 6. Security
 
-# Member 3 -- Treatment & Notification + MCP
+* [ ] JWT authentication
+* [ ] Owner role
+* [ ] Admin role
+* [ ] Authorization policies
 
-## 1. Project setup
+### 7. MCP Contribution
 
--   [ ] Create service
--   [ ] Configure EF Core
--   [ ] Configure PostgreSQL
+Implement Pet-related MCP tools.
 
-## 2. Domain
+* [ ] Define MCP contract for Pet tools
+* [ ] Implement `GetPet`
+* [ ] Implement `GetOwnerPets`
+* [ ] Test MCP tool responses
 
--   [ ] MedicalExamination
--   [ ] Vaccination
--   [ ] Notification
--   [ ] Notification status
--   [ ] SourceEventId idempotency
+### 8. Testing
 
-## 3. Application
+* [ ] Unit tests
+* [ ] Repository tests
+* [ ] API tests
+* [ ] Provider Pact tests
+* [ ] Health endpoint test
 
--   [ ] Add examination
--   [ ] Add vaccination
--   [ ] Medical history query
--   [ ] Next vaccination query
+---
 
-## 4. Infrastructure
+# Member 2 — Appointment Service
 
--   [ ] DbContext
--   [ ] Repositories
--   [ ] Seed data
+### 1. Project Setup
 
-## 5. Kafka Consumer
+* [ ] Create Appointment Service
+* [ ] Configure Clean Architecture
+* [ ] Configure EF Core
+* [ ] Configure PostgreSQL
+* [ ] Configure Swagger
+* [ ] Configure Health Checks
 
--   [ ] Consume Scheduled
--   [ ] Consume Cancelled
--   [ ] Consume Rescheduled
--   [ ] Offset commit after success
 
-## 6. Notification Worker
+### 2. Domain
 
--   [ ] Background worker
--   [ ] Console notification sender
--   [ ] TODO Email/SMS
+#### Clinic
 
-## 7. MCP Server
+* [ ] Entity
+* [ ] Validation
 
--   [ ] Configure SDK
--   [ ] Streamable HTTP
--   [ ] GetPet
--   [ ] GetUpcomingAppointments
--   [ ] GetNextVaccination
--   [ ] FindAvailableVeterinarians
--   [ ] API Gateway integration
--   [ ] Service account authentication
+#### Veterinarian
 
-## 8. Security
+* [ ] Entity
+* [ ] Specialization
+* [ ] Availability
 
--   [ ] Veterinarian/Admin authorization
+#### AvailabilitySlot
 
-## 9. Testing
+* [ ] Entity
+* [ ] Rules
 
--   [ ] MCP Inspector
--   [ ] Health endpoint
+#### Appointment
 
-------------------------------------------------------------------------
+* [ ] Entity
+* [ ] Status
+* [ ] Date
+* [ ] Duration
 
-# Shared Tasks
+##### Business Rules
 
-## Infrastructure
+* [ ] Booking rules
+* [ ] Conflict detection
+* [ ] Double-book prevention
+* [ ] Cancellation rules
+* [ ] Reschedule rules
+* [ ] Appointment state transitions
 
--   [ ] Docker Compose
--   [ ] API Gateway (YARP)
--   [ ] Consul
--   [ ] Kafka
--   [ ] Keycloak
--   [ ] Three PostgreSQL databases
 
-## Security
+### 3. Application
 
--   [ ] Realm
--   [ ] Roles
--   [ ] Clients
--   [ ] JWT validation
+##### Commands
 
-## Documentation
+* [ ] Schedule Appointment
+* [ ] Cancel Appointment
+* [ ] Reschedule Appointment
 
--   [ ] Architecture diagram
--   [ ] Specification
--   [ ] README
--   [ ] API documentation
+##### Queries
 
-## Testing
+* [ ] Search Clinics
+* [ ] Search Veterinarians
+* [ ] Search Available Slots
+* [ ] Upcoming Appointments
 
--   [ ] End-to-end demo
--   [ ] Integration tests
--   [ ] Health checks
+##### DTOs
 
-## Presentation
+* [ ] Appointment DTOs
+* [ ] Clinic DTOs
+* [ ] Vet DTOs
 
--   [ ] Demo script
--   [ ] 5-minute video
--   [ ] MCP demonstration
+##### Validation
+
+* [ ] Command validators
+* [ ] Query validators
+
+### 4. Infrastructure
+
+* [ ] DbContext
+* [ ] Repositories
+* [ ] Entity configurations
+* [ ] Seed Clinics
+* [ ] Seed Veterinarians
+* [ ] Seed Slots
+* [ ] Migrations
+
+### 5. REST Integration
+
+* [ ] IPetVerificationClient
+* [ ] HttpClient
+* [ ] Consul service discovery
+* [ ] ACL mapping
+* [ ] Retry policy
+* [ ] Client Credentials authentication
+
+### 6. Kafka
+
+##### Producer
+
+* [ ] AppointmentScheduled
+* [ ] AppointmentCancelled
+* [ ] AppointmentRescheduled
+
+### 7. API
+
+* [ ] Search Clinics
+* [ ] Search Vets
+* [ ] Search Slots
+* [ ] Book Appointment
+* [ ] Cancel Appointment
+* [ ] Reschedule Appointment
+* [ ] Health endpoint
+
+### 8. Security
+
+* [ ] JWT
+* [ ] Owner authorization
+* [ ] Veterinarian authorization
+* [ ] Admin authorization
+
+### 9. MCP Contribution
+
+Implement Appointment-related MCP tools.
+
+* [ ] Define MCP contract for Appointment tools
+* [ ] Implement `FindAvailableVeterinarians`
+* [ ] Implement `GetUpcomingAppointments`
+* [ ] Test MCP tool responses
+
+
+### 10. Testing
+
+* [ ] Unit tests
+* [ ] Consumer Pact tests
+* [ ] Integration tests
+* [ ] Health tests
+
+---
+
+# Member 3 — Treatment Service + Notification + MCP Infrastructure
+
+### 1. Project Setup
+
+* [ ] Create Treatment Service
+* [ ] Configure Clean Architecture
+* [ ] Configure EF Core
+* [ ] Configure PostgreSQL
+* [ ] Configure Swagger
+* [ ] Configure Health Checks
+
+### 2. Domain
+
+#### Medical Examination
+
+* [ ] Entity
+* [ ] Diagnosis
+* [ ] Notes
+
+#### Vaccination
+
+* [ ] Entity
+* [ ] Vaccine
+* [ ] Date
+* [ ] Next Due Date
+
+#### Notification
+
+* [ ] Entity
+* [ ] Status
+* [ ] Scheduled Time
+* [ ] Delivery State
+
+##### Domain Rules
+
+* [ ] Vaccination scheduling
+* [ ] Notification status transitions
+* [ ] SourceEventId idempotency
+
+---
+
+### 3. Application
+
+##### Commands
+
+* [ ] Add Examination
+* [ ] Add Vaccination
+* [ ] Create Notification
+
+##### Queries
+
+* [ ] Medical History
+* [ ] Vaccination History
+* [ ] Next Vaccination
+* [ ] Pending Notifications
+
+### 4. Infrastructure
+
+* [ ] DbContext
+* [ ] Repositories
+* [ ] Seed Data
+* [ ] Entity configurations
+
+
+### 5. Kafka
+
+##### Consumer
+
+* [ ] Consume AppointmentScheduled
+* [ ] Consume AppointmentCancelled
+* [ ] Consume AppointmentRescheduled
+* [ ] Idempotency handling
+* [ ] Offset commit after success
+* [ ] Error handling
+* [ ] Retry policy
+
+
+### 6. Notification Worker
+
+* [ ] Background Worker
+* [ ] Notification Scheduler
+* [ ] Console Notification Sender
+* [ ] Email placeholder
+* [ ] SMS placeholder
+
+
+### 7. API
+
+* [ ] Add Examination
+* [ ] Add Vaccination
+* [ ] Get Medical History
+* [ ] Get Vaccinations
+* [ ] Get Next Vaccination
+* [ ] Health endpoint
+
+
+### 8. MCP Infrastructure
+
+Own the shared MCP server.
+
+* [ ] Create MCP Server project
+* [ ] Configure MCP SDK
+* [ ] Configure Streamable HTTP transport
+* [ ] Configure dependency injection
+* [ ] Configure service authentication
+* [ ] Configure API Gateway integration
+* [ ] Register all MCP tools
+* [ ] Test MCP server with Inspector
+
+> **Note:** The implementations of the service-specific tools (`GetPet`, `FindAvailableVeterinarians`, etc.) are contributed by the respective service owners. Member 3 is responsible for the MCP server infrastructure and integrating those tools into the server.
+
+
+### 9. Security
+
+* [ ] JWT
+* [ ] Veterinarian authorization
+* [ ] Admin authorization
+
+
+### 10. Testing
+
+* [ ] Unit tests
+* [ ] Kafka integration tests
+* [ ] Worker tests
+* [ ] MCP Inspector tests
+* [ ] Health tests
+
+---
+
+# Shared Infrastructure
+
+## Member 1 (Primary Owner) – Security
+
+### Keycloak
+
+* [ ] Create Realm
+* [ ] Create Roles
+* [ ] Create Clients
+* [ ] Configure Client Credentials
+* [ ] Configure JWT validation
+* [ ] Document authentication flow
+
+---
+
+## Member 2 (Primary Owner) – Infrastructure
+
+### Docker Compose
+
+* [ ] PostgreSQL containers
+* [ ] Kafka
+* [ ] Zookeeper/KRaft
+* [ ] Consul
+* [ ] Keycloak
+* [ ] Three microservices
+* [ ] MCP Server
+* [ ] API Gateway
+
+### Consul
+
+* [ ] Service registration
+* [ ] Health checks
+
+---
+
+## Member 3 (Primary Owner) – Gateway & Integration
+
+### API Gateway (YARP)
+
+* [ ] Route configuration
+* [ ] Authentication forwarding
+* [ ] Service discovery integration
+* [ ] MCP endpoint routing
+
+---
+
+# Documentation (Everyone)
+
+* [ ] Update README for owned service
+* [ ] Document REST endpoints
+* [ ] Document architecture decisions
+* [ ] Update sequence diagrams
+* [ ] Add OpenAPI/Swagger documentation
+
+---
+
+# Final Team Integration
+
+* [ ] Verify all services communicate correctly
+* [ ] Verify REST communication
+* [ ] Verify Kafka messaging
+* [ ] Verify authentication
+* [ ] Verify MCP tools end-to-end
+* [ ] Run end-to-end demo
+* [ ] Fix integration issues
+* [ ] Prepare presentation
+* [ ] Record demo video
