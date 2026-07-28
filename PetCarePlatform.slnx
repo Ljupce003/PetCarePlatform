@@ -1,5 +1,10 @@
 <Solution>
   <Project Path="AppointmentService/AppointmentService.csproj" />
-  <Project Path="PetService/PetService.csproj" />
+  <Folder Name="/PetService/">
+    <Project Path="PetService/PetService.Domain/PetService.Domain.csproj" />
+    <Project Path="PetService/PetService.Application/PetService.Application.csproj" />
+    <Project Path="PetService/PetService.Infrastructure/PetService.Infrastructure.csproj" />
+    <Project Path="PetService/PetService.Api/PetService.Api.csproj" />
+  </Folder>
   <Project Path="TreatmentAndNotificationService/TreatmentAndNotificationService.csproj" />
 </Solution>
