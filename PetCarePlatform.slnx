@@ -1,5 +1,8 @@
 <Solution>
-  <Project Path="AppointmentService/AppointmentService.csproj" />
+  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Domain/PetCarePlatform.AppointmentService.Domain.csproj" />
+  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Application/PetCarePlatform.AppointmentService.Application.csproj" />
+  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Infrastructure/PetCarePlatform.AppointmentService.Infrastructure.csproj" />
+  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Api/PetCarePlatform.AppointmentService.Api.csproj" />
   <Project Path="PetService/PetService.csproj" />
   <Project Path="TreatmentAndNotificationService/TreatmentAndNotificationService.csproj" />
 </Solution>

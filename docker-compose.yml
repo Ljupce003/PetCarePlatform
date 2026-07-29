@@ -1,0 +1,37 @@
+
+# Local/Docker startup for the Appointment Service (Member 2's bounded context).
+# Other services get their own compose entries as their owners set them up.
+services:
+  appointment-db:
+    image: postgres:16-alpine
+    container_name: petcare-appointment-db
+    environment:
+      POSTGRES_DB: petcare_appointment
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - appointment-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d petcare_appointment" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  appointment-service:
+    build:
+      context: .
+      dockerfile: AppointmentService/PetCarePlatform.AppointmentService.Api/Dockerfile
+    container_name: petcare-appointment-service
+    depends_on:
+      appointment-db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ConnectionStrings__Database: "Host=appointment-db;Port=5432;Database=petcare_appointment;Username=postgres;Password=postgres"
+    ports:
+      - "5102:8080"
+
+volumes:
+  appointment-db-data:
