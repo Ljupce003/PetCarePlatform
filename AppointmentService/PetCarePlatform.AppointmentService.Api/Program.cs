@@ -32,7 +32,6 @@ app.UseSwaggerUI(options =>
     options.RoutePrefix = "swagger";
 });
 
-app.UseHttpsRedirection();
 app.MapControllers();
 app.MapHealthChecks("/health");
 
