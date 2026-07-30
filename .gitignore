@@ -60,3 +60,4 @@ nunit-*.xml
 
 .vs/
 *.user
+/PetService/README.md
