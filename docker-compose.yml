@@ -1,0 +1,110 @@
+name: petcare
+
+services:
+  pet-db:
+    image: postgres:17-alpine
+    container_name: petcare-pet-db
+    environment:
+      POSTGRES_DB: petcare_pet
+      POSTGRES_USER: petcare
+      POSTGRES_PASSWORD: petcare
+    ports:
+      - "5433:5432"
+    volumes:
+      - pet-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petcare -d petcare_pet"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  appointment-db:
+    image: postgres:17-alpine
+    container_name: petcare-appointment-db
+    environment:
+      POSTGRES_DB: petcare_appointment
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - appointment-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d petcare_appointment"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  treatment-db:
+    image: postgres:17-alpine
+    container_name: petcare-treatment-db
+    restart: always
+    environment:
+      POSTGRES_DB: treatments_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "5553:5432"
+    volumes:
+      - treatment-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d treatments_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pet-service:
+    image: petcare/pet-service:latest
+    container_name: petcare-pet-service
+    build:
+      context: .
+      dockerfile: PetService/PetService.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__Database: "Host=pet-db;Port=5432;Database=petcare_pet;Username=petcare;Password=petcare"
+    ports:
+      - "5101:8080"
+    depends_on:
+      pet-db:
+        condition: service_healthy
+
+  appointment-service:
+    image: petcare/appointment-service:latest
+    container_name: petcare-appointment-service
+    build:
+      context: .
+      dockerfile: AppointmentService/PetCarePlatform.AppointmentService.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__Database: "Host=appointment-db;Port=5432;Database=petcare_appointment;Username=postgres;Password=postgres"
+    ports:
+      - "5102:8080"
+    container_name: petcare-appointment-service
+    depends_on:
+      appointment-db:
+        condition: service_healthy
+
+  treatment-and-notification-service:
+    image: petcare/treatment-and-notification-service:latest
+    container_name: petcare-treatment-and-notification-service
+    build:
+      context: .
+      dockerfile: TreatmentAndNotificationService/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__Database: "Host=treatment-db;Port=5432;Database=treatments_db;Username=postgres;Password=mysecretpassword"
+      ConnectionStrings__Database: "Host=appointment-db;Port=5432;Database=petcare_appointment;Username=postgres;Password=postgres"
+    ports:
+      - "5103:8080"
+    depends_on:
+      treatment-db:
+        condition: service_healthy
+      - "5102:8080"
+
+volumes:
+  pet-db-data:
+  appointment-db-data:
+  treatment-db-data:

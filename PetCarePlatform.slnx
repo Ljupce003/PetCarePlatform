@@ -3,6 +3,16 @@
     <File Path="compose.yaml" />
   </Folder>
   <Project Path="AppointmentService/AppointmentService.csproj" />
+  <Folder Name="/PetService/">
+    <Project Path="PetService/PetService.Domain/PetService.Domain.csproj" />
+    <Project Path="PetService/PetService.Application/PetService.Application.csproj" />
+    <Project Path="PetService/PetService.Infrastructure/PetService.Infrastructure.csproj" />
+    <Project Path="PetService/PetService.Api/PetService.Api.csproj" />
+  </Folder>
+  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Domain/PetCarePlatform.AppointmentService.Domain.csproj" />
+  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Application/PetCarePlatform.AppointmentService.Application.csproj" />
+  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Infrastructure/PetCarePlatform.AppointmentService.Infrastructure.csproj" />
+  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Api/PetCarePlatform.AppointmentService.Api.csproj" />
   <Project Path="PetService/PetService.csproj" />
   <Project Path="TreatmentAndNotificationService/TreatmentAndNotificationService.csproj" />
 </Solution>

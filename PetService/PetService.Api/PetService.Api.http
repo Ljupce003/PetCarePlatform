@@ -1,0 +1,12 @@
+@PetService_HostAddress = http://localhost:5224
+
+### Full health report, including the database check
+GET {{PetService_HostAddress}}/health
+
+### Liveness only — does not touch the database
+GET {{PetService_HostAddress}}/health/live
+
+### OpenAPI document
+GET {{PetService_HostAddress}}/openapi/v1.json
+
+### Swagger UI is served at {{PetService_HostAddress}}/swagger

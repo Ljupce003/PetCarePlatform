@@ -8,13 +8,21 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9"/>
     </ItemGroup>
 
     <ItemGroup>
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
+      <Content Include="AppointmentService.Domain\AppointmentService.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="AppointmentService.Api\" />
+      <Folder Include="AppointmentService.Application\" />
+      <Folder Include="AppointmentService.Domain\Entities\" />
+      <Folder Include="AppointmentService.Infrastructure\" />
     </ItemGroup>
 
 </Project>
