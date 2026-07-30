@@ -30,8 +30,11 @@
 
     <ItemGroup>
       <Folder Include="Domain\Aggregates\" />
-      <Folder Include="Domain\Entities\" />
       <Folder Include="Domain\ValueObjects\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Shared\Shared.csproj" />
     </ItemGroup>
 
 </Project>
