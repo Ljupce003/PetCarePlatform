@@ -14,18 +14,18 @@ Your service must be implemented as an independent microservice with clear bound
 ---
 
 ## 1. Service setup and architecture
-- [ ] Create the Pet Service project structure inside the monorepo.
-- [ ] Configure Clean Architecture layers:
-  - [ ] Domain
-  - [ ] Application
-  - [ ] Infrastructure
-  - [ ] API
-- [ ] Configure dependency injection for all layers.
-- [ ] Configure application settings for local development and Docker usage.
-- [ ] Configure logging and structured logging.
-- [ ] Configure Swagger/OpenAPI and health checks.
-- [ ] Configure EF Core with PostgreSQL.
-- [ ] Prepare a Docker-compatible service configuration.
+- [x] Create the Pet Service project structure inside the monorepo.
+- [x] Configure Clean Architecture layers:
+  - [x] Domain
+  - [x] Application
+  - [x] Infrastructure
+  - [x] API
+- [x] Configure dependency injection for all layers.
+- [x] Configure application settings for local development and Docker usage.
+- [x] Configure logging and structured logging.
+- [x] Configure Swagger/OpenAPI and health checks.
+- [x] Configure EF Core with PostgreSQL.
+- [x] Prepare a Docker-compatible service configuration.
 
 ### Acceptance criteria
 - The service can start locally and expose Swagger and health endpoints.
@@ -37,30 +37,30 @@ Your service must be implemented as an independent microservice with clear bound
 You must model the Pet domain as a self-contained business domain.
 
 ### Owner aggregate
-- [ ] Create the `Owner` entity.
-- [ ] Add fields: `OwnerId`, `OwnerName`, `Email`, `Phone`, `Address`.
-- [ ] Define invariants for owner data.
-- [ ] Add validation rules for required fields and valid email/phone formats.
+- [x] Create the `Owner` entity.
+- [x] Add fields: `OwnerId`, `OwnerName`, `Email`, `Phone`, `Address`.
+- [x] Define invariants for owner data.
+- [x] Add validation rules for required fields and valid email/phone formats.
 
 ### Pet aggregate
-- [ ] Create the `Pet` entity.
-- [ ] Add fields: `PetId`, `Name`, `Species`, `Breed`, `BirthDate`, `Weight`, `Allergies`, `ChronicConditions`, `OwnerId`.
-- [ ] Define a clear relationship between `Owner` and `Pet`.
-- [ ] Implement business rules for pet creation and update.
+- [x] Create the `Pet` entity.
+- [x] Add fields: `PetId`, `Name`, `Species`, `Breed`, `BirthDate`, `Weight`, `Allergies`, `ChronicConditions`, `OwnerId`.
+- [x] Define a clear relationship between `Owner` and `Pet`.
+- [x] Implement business rules for pet creation and update.
 
 ### Value objects and domain rules
-- [ ] Create or use value objects for `MicrochipNumber`, `PetName`, and optionally `Breed`.
-- [ ] Enforce validation for:
-  - [ ] Required pet name
-  - [ ] Valid birth date
-  - [ ] Valid microchip number format
-  - [ ] Valid species
-  - [ ] Valid weight
-- [ ] Create domain exceptions for:
-  - [ ] `PetAlreadyExists`
-  - [ ] `InvalidMicrochip`
-  - [ ] `InvalidBirthDate`
-  - [ ] `OwnerNotFound`
+- [x] Create or use value objects for `MicrochipNumber`, `PetName`, and optionally `Breed`.
+- [x] Enforce validation for:
+  - [x] Required pet name
+  - [x] Valid birth date
+  - [x] Valid microchip number format
+  - [x] Valid species
+  - [x] Valid weight
+- [x] Create domain exceptions for:
+  - [x] `PetAlreadyExists`
+  - [x] `InvalidMicrochip`
+  - [x] `InvalidBirthDate`
+  - [x] `OwnerNotFound`
 
 ### Acceptance criteria
 - The domain layer contains business rules and does not depend on the API or infrastructure layers.
