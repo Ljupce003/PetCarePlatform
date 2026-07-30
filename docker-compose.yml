@@ -81,7 +81,6 @@ services:
       ConnectionStrings__Database: "Host=appointment-db;Port=5432;Database=petcare_appointment;Username=postgres;Password=postgres"
     ports:
       - "5102:8080"
-    container_name: petcare-appointment-service
     depends_on:
       appointment-db:
         condition: service_healthy
@@ -96,13 +95,11 @@ services:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Database: "Host=treatment-db;Port=5432;Database=treatments_db;Username=postgres;Password=mysecretpassword"
-      ConnectionStrings__Database: "Host=appointment-db;Port=5432;Database=petcare_appointment;Username=postgres;Password=postgres"
     ports:
       - "5103:8080"
     depends_on:
       treatment-db:
         condition: service_healthy
-      - "5102:8080"
 
 volumes:
   pet-db-data:
