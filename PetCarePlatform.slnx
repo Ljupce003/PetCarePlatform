@@ -12,5 +12,6 @@
   <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Infrastructure/PetCarePlatform.AppointmentService.Infrastructure.csproj" />
   <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Api/PetCarePlatform.AppointmentService.Api.csproj" />
   <Project Path="PetService/PetService.csproj" />
+  <Project Path="Shared/Shared.csproj" />
   <Project Path="TreatmentAndNotificationService/TreatmentAndNotificationService.csproj" />
 </Solution>
