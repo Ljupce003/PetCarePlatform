@@ -15,6 +15,14 @@
       <Content Include="..\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
+      <Content Include="AppointmentService.Domain\AppointmentService.Domain.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="AppointmentService.Api\" />
+      <Folder Include="AppointmentService.Application\" />
+      <Folder Include="AppointmentService.Domain\Entities\" />
+      <Folder Include="AppointmentService.Infrastructure\" />
     </ItemGroup>
 
 </Project>

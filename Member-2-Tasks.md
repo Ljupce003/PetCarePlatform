@@ -15,16 +15,17 @@ Your work must cover business logic, service discovery, service-to-service commu
 ---
 
 ## 1. Service setup and architecture
-- [ ] Create the Appointment Service project structure.
-- [ ] Configure Clean Architecture layers:
-  - [ ] Domain
-  - [ ] Application
-  - [ ] Infrastructure
-  - [ ] API
-- [ ] Configure dependency injection and service registration.
-- [ ] Configure logging, Swagger/OpenAPI, and health checks.
-- [ ] Configure EF Core with PostgreSQL.
-- [ ] Prepare Docker/service startup configuration.
+- [x] Create the Appointment Service project structure.
+- [x] Configure Clean Architecture layers:
+  - [x] Domain
+  - [x] Application
+  - [x] Infrastructure
+  - [x] API
+- [x] Configure dependency injection and service registration.
+- [x] Configure logging, Swagger/OpenAPI, and health checks.
+- Swager is configured and accessible at `/swagger` endpoint on 5102 port.
+- [x] Configure EF Core with PostgreSQL.
+- [x] Prepare Docker/service startup configuration.
 
 ### Acceptance criteria
 - The service starts independently and exposes Swagger and health endpoints.
