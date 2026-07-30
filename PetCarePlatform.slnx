@@ -1,7 +1,5 @@
 <Solution>
-  <Folder Name="/Solution Items/">
-    <File Path="compose.yaml" />
-  </Folder>
+  <Folder Name="/Solution Items/" />
   <Project Path="AppointmentService/AppointmentService.csproj" />
   <Folder Name="/PetService/">
     <Project Path="PetService/PetService.Domain/PetService.Domain.csproj" />
@@ -14,5 +12,6 @@
   <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Infrastructure/PetCarePlatform.AppointmentService.Infrastructure.csproj" />
   <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Api/PetCarePlatform.AppointmentService.Api.csproj" />
   <Project Path="PetService/PetService.csproj" />
+  <Project Path="Shared/Shared.csproj" />
   <Project Path="TreatmentAndNotificationService/TreatmentAndNotificationService.csproj" />
 </Solution>
