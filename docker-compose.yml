@@ -72,7 +72,7 @@ services:
     container_name: petcare-appointment-service
     build:
       context: .
-      dockerfile: AppointmentService/PetCarePlatform.AppointmentService.Api/Dockerfile
+      dockerfile: AppointmentService/AppointmentService.Api/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
