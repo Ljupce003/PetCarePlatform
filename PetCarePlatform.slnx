@@ -1,16 +1,17 @@
 <Solution>
   <Folder Name="/Solution Items/" />
-  <Project Path="AppointmentService/AppointmentService.csproj" />
+  <Folder Name="/AppointmentService/">
+    <Project Path="AppointmentService/AppointmentService.Domain/AppointmentService.Domain.csproj" />
+    <Project Path="AppointmentService/AppointmentService.Application/AppointmentService.Application.csproj" />
+    <Project Path="AppointmentService/AppointmentService.Infrastructure/AppointmentService.Infrastructure.csproj" />
+    <Project Path="AppointmentService/AppointmentService.Api/AppointmentService.Api.csproj" />
+  </Folder>
   <Folder Name="/PetService/">
     <Project Path="PetService/PetService.Domain/PetService.Domain.csproj" />
     <Project Path="PetService/PetService.Application/PetService.Application.csproj" />
     <Project Path="PetService/PetService.Infrastructure/PetService.Infrastructure.csproj" />
     <Project Path="PetService/PetService.Api/PetService.Api.csproj" />
   </Folder>
-  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Domain/PetCarePlatform.AppointmentService.Domain.csproj" />
-  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Application/PetCarePlatform.AppointmentService.Application.csproj" />
-  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Infrastructure/PetCarePlatform.AppointmentService.Infrastructure.csproj" />
-  <Project Path="AppointmentService/PetCarePlatform.AppointmentService.Api/PetCarePlatform.AppointmentService.Api.csproj" />
   <Project Path="PetService/PetService.csproj" />
   <Project Path="Shared/Shared.csproj" />
   <Project Path="TreatmentAndNotificationService/TreatmentAndNotificationService.csproj" />
