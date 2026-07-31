@@ -1,0 +1,12 @@
+@AppointmentService_HostAddress = http://localhost:5138
+
+### Full health report, including the database check
+GET {{AppointmentService_HostAddress}}/health
+
+### Liveness only — does not touch the database
+GET {{AppointmentService_HostAddress}}/health/live
+
+### OpenAPI document
+GET {{AppointmentService_HostAddress}}/openapi/v1.json
+
+### Swagger UI is served at {{AppointmentService_HostAddress}}/swagger
