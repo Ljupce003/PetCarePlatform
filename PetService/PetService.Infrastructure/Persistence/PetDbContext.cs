@@ -11,7 +11,7 @@ namespace PetService.Infrastructure.Persistence;
 /// <see cref="IEntityTypeConfiguration{TEntity}"/> in this assembly, applied here via
 /// <c>modelBuilder.ApplyConfigurationsFromAssembly(...)</c> once the first one exists.
 /// </remarks>
-public sealed class PetDbContext(DbContextOptions<PetDbContext> options) : DbContext(options)
+public class PetDbContext(DbContextOptions<PetDbContext> options) : DbContext(options)
 {
     protected override void OnModelCreating(ModelBuilder modelBuilder) => base.OnModelCreating(modelBuilder);
 }
