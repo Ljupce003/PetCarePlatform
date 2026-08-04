@@ -12,7 +12,7 @@
     <Project Path="PetService/PetService.Infrastructure/PetService.Infrastructure.csproj" />
     <Project Path="PetService/PetService.Api/PetService.Api.csproj" />
   </Folder>
-  <Project Path="PetService/PetService.csproj" />
+  
   <Project Path="Shared/Shared.csproj" />
   <Project Path="TreatmentAndNotificationService/TreatmentAndNotificationService.csproj" />
 </Solution>
