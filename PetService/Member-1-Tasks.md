@@ -72,27 +72,27 @@ You must model the Pet domain as a self-contained business domain.
 Implement use cases for the Pet domain.
 
 ### Commands
-- [ ] Implement `CreateOwner`
-- [ ] Implement `UpdateOwner`
-- [ ] Implement `DeleteOwner`
-- [ ] Implement `RegisterPet`
-- [ ] Implement `UpdatePet`
-- [ ] Implement `DeletePet`
+- [x] Implement `CreateOwner`
+- [x] Implement `UpdateOwner`
+- [x] Implement `DeleteOwner`
+- [x] Implement `RegisterPet`
+- [x] Implement `UpdatePet`
+- [x] Implement `DeletePet`
 
 ### Queries
-- [ ] Implement `GetPetById`
-- [ ] Implement `GetAllPets`
-- [ ] Implement `GetOwner`
-- [ ] Implement `GetOwnerPets`
-- [ ] Implement `CheckPetOwnership`
+- [x] Implement `GetPetById`
+- [x] Implement `GetAllPets`
+- [x] Implement `GetOwner`
+- [x] Implement `GetOwnerPets`
+- [x] Implement `CheckPetOwnership`
 
 ### DTOs and validation
-- [ ] Create `PetDto`
-- [ ] Create `OwnerDto`
-- [ ] Create `CreatePetRequest`
-- [ ] Create `UpdatePetRequest`
-- [ ] Add FluentValidation validators for commands and requests.
-- [ ] Implement object mapping between entities and DTOs.
+- [x] Create `PetDto`
+- [x] Create `OwnerDto`
+- [x] Create `CreatePetRequest`
+- [x] Create `UpdatePetRequest`
+- [x] Add FluentValidation validators for commands and requests.
+- [x] Implement object mapping between entities and DTOs.
 
 ### Acceptance criteria
 - All business operations are reachable through application services.
