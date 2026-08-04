@@ -101,12 +101,12 @@ Implement use cases for the Pet domain.
 ---
 
 ## 4. Infrastructure layer
-- [ ] Create the EF Core `DbContext`.
-- [ ] Configure entity mappings for `Owner` and `Pet`.
-- [ ] Implement repository interfaces and concrete repository classes.
-- [ ] Add database migrations.
-- [ ] Seed sample owners and pets for demo use.
-- [ ] Ensure the service can work with a dedicated PostgreSQL database.
+- [x] Create the EF Core `DbContext`.
+- [x] Configure entity mappings for `Owner` and `Pet`.
+- [x] Implement repository interfaces and concrete repository classes.
+- [x] Add database migrations.
+- [x] Seed sample owners and pets for demo use.
+- [x] Ensure the service can work with a dedicated PostgreSQL database.
 
 ### Acceptance criteria
 - Data is stored in the Pet Service database only.

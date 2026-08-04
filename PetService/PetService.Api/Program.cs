@@ -55,6 +55,26 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions
 
 app.MapControllers();
 
+// Keep the dedicated Pet database schema current and add deterministic demo owners/pets
+// the first time an empty database starts. Database outages remain visible through /health
+// without preventing the service process from starting.
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<PetDbContext>();
+        await PetDbInitializer.InitializeAsync(dbContext);
+        logger.LogInformation("Pet Service database is ready");
+    }
+    catch (Exception ex)
+    {
+        logger.LogWarning(
+            ex,
+            "Could not reach the Pet Service database on startup; it will be reported as unhealthy until it becomes reachable");
+    }
+}
+
 await app.RunAsync();
 
 // Reports which check failed instead of the default one-word body.
