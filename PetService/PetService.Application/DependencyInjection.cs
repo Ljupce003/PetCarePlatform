@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<GetPetByIdHandler>();
         services.AddScoped<GetAllPetsHandler>();
         services.AddScoped<GetOwnerHandler>();
+        services.AddScoped<GetAllOwnersHandler>();
         services.AddScoped<GetOwnerPetsHandler>();
         services.AddScoped<CheckPetOwnershipHandler>();
 

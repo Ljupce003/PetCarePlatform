@@ -6,6 +6,8 @@ public interface IOwnerRepository
 {
     Task<Owner?> GetByIdAsync(Guid ownerId, CancellationToken cancellationToken);
 
+    Task<IReadOnlyList<Owner>> GetAllAsync(CancellationToken cancellationToken);
+
     Task AddAsync(Owner owner, CancellationToken cancellationToken);
 
     void Remove(Owner owner);

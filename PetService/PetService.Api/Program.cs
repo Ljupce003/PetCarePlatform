@@ -1,6 +1,8 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using PetService.Api.ErrorHandling;
 using PetService.Infrastructure;
 using PetService.Infrastructure.Persistence;
 
@@ -26,7 +28,11 @@ else
     });
 }
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
 builder.Services.AddOpenApi();
 
@@ -36,6 +42,8 @@ builder.Services.AddHealthChecks()
 builder.Services.AddPetServiceInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 app.MapOpenApi();
 app.UseSwaggerUI(options =>

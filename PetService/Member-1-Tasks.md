@@ -118,23 +118,23 @@ Implement use cases for the Pet domain.
 You must expose the Pet Service through REST endpoints.
 
 ### Owner endpoints
-- [ ] `POST /owners`
-- [ ] `GET /owners/{id}`
-- [ ] `GET /owners`
-- [ ] `PUT /owners/{id}`
-- [ ] `DELETE /owners/{id}`
+- [x] `POST /owners`
+- [x] `GET /owners/{id}`
+- [x] `GET /owners`
+- [x] `PUT /owners/{id}`
+- [x] `DELETE /owners/{id}`
 
 ### Pet endpoints
-- [ ] `POST /pets`
-- [ ] `GET /pets/{id}`
-- [ ] `GET /pets`
-- [ ] `PUT /pets/{id}`
-- [ ] `DELETE /pets/{id}`
+- [x] `POST /pets`
+- [x] `GET /pets/{id}`
+- [x] `GET /pets`
+- [x] `PUT /pets/{id}`
+- [x] `DELETE /pets/{id}`
 
 ### Integration endpoints
-- [ ] `GET /owners/{ownerId}/pets`
-- [ ] `GET /pets/{id}/exists?ownerId=...`
-- [ ] `GET /health`
+- [x] `GET /owners/{ownerId}/pets`
+- [x] `GET /pets/{id}/exists?ownerId=...`
+- [x] `GET /health`
 
 ### Acceptance criteria
 - Endpoints return correct status codes and meaningful payloads.

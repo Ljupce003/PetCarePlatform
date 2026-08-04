@@ -10,6 +10,12 @@ public class OwnerRepository(PetDbContext dbContext) : IOwnerRepository
     public async Task<Owner?> GetByIdAsync(Guid ownerId, CancellationToken cancellationToken) =>
         await dbContext.Owners.FirstOrDefaultAsync(owner => owner.OwnerId == ownerId, cancellationToken);
 
+    public async Task<IReadOnlyList<Owner>> GetAllAsync(CancellationToken cancellationToken) =>
+        await dbContext.Owners
+            .AsNoTracking()
+            .OrderBy(owner => owner.OwnerName)
+            .ToListAsync(cancellationToken);
+
     public async Task AddAsync(Owner owner, CancellationToken cancellationToken) =>
         await dbContext.Owners.AddAsync(owner, cancellationToken);
 
