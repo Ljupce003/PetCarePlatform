@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PetService.Application;
+using PetService.Application.Abstractions;
 using PetService.Infrastructure.Persistence;
 
 namespace PetService.Infrastructure;
@@ -21,6 +22,10 @@ public static class DependencyInjection
                 "or the ConnectionStrings__Database environment variable.");
 
         services.AddDbContext<PetDbContext>(options => options.UseNpgsql(connectionString));
+
+        services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<PetDbContext>());
+        services.AddScoped<IOwnerRepository, OwnerRepository>();
+        services.AddScoped<IPetRepository, PetRepository>();
 
         services.AddPetServiceApplication();
         return services;
