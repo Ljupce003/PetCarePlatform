@@ -77,11 +77,14 @@ services:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Database: "Host=appointment-db;Port=5432;Database=petcare_appointment;Username=postgres;Password=postgres"
+      PetService__BaseUrl: "http://pet-service:8080"
     ports:
       - "5102:8080"
     depends_on:
       appointment-db:
         condition: service_healthy
+      pet-service:
+        condition: service_started
 
   treatment-and-notification-service:
     image: petcare/treatment-and-notification-service:latest

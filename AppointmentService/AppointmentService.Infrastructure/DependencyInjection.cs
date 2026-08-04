@@ -3,7 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using AppointmentService.Application;
 using AppointmentService.Application.Abstractions;
+using AppointmentService.Infrastructure.Clients;
 using AppointmentService.Infrastructure.Persistence;
+using AppointmentService.Infrastructure.Security;
 
 namespace AppointmentService.Infrastructure;
 
@@ -32,7 +34,30 @@ public static class DependencyInjection
         services.AddScoped<IAvailabilitySlotRepository, AvailabilitySlotRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
+        AddPetServiceClient(services, configuration);
+
         services.AddAppointmentServiceApplication();
         return services;
+    }
+
+    private static void AddPetServiceClient(IServiceCollection services, IConfiguration configuration)
+    {
+        var petServiceBaseUrl = configuration["PetService:BaseUrl"]
+            ?? throw new InvalidOperationException(
+                "PetService:BaseUrl is not configured. Set PetService:BaseUrl in appsettings or the " +
+                "PetService__BaseUrl environment variable.");
+
+        // Inert until a real IServiceAccessTokenProvider is registered (see NullServiceAccessTokenProvider).
+        services.AddSingleton<IServiceAccessTokenProvider, NullServiceAccessTokenProvider>();
+        services.AddTransient<ServiceAccessTokenHandler>();
+
+        services.AddHttpClient<IPetVerificationClient, PetServiceClient>(client =>
+            {
+                client.BaseAddress = new Uri(petServiceBaseUrl);
+            })
+            .AddHttpMessageHandler<ServiceAccessTokenHandler>()
+            // Retry with backoff + circuit breaker + timeout for transient Pet Service failures,
+            // instead of a single hand-rolled retry loop.
+            .AddStandardResilienceHandler();
     }
 }

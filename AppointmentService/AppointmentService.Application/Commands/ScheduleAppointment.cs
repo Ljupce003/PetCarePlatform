@@ -45,24 +45,35 @@ public static class ScheduleAppointmentValidator
 }
 
 /// <summary>
-/// Books an appointment: reserves the requested slot (this is where double-booking and
-/// expired-slot conflicts are caught, see <see cref="AvailabilitySlot.Reserve"/>) and creates
-/// the appointment against it.
+/// Books an appointment: verifies the pet with the Pet Service, reserves the requested slot
+/// (this is where double-booking and expired-slot conflicts are caught, see
+/// <see cref="AvailabilitySlot.Reserve"/>) and creates the appointment against it.
 /// </summary>
-/// <remarks>
-/// Verifying that the pet exists and belongs to the owner is deliberately not done here yet —
-/// that anti-corruption check against the Pet Service is a separate piece of work (REST
-/// integration with Pet Service) and will slot in right before the slot is reserved.
-/// </remarks>
 public sealed class ScheduleAppointmentHandler(
     IAppointmentRepository appointments,
     IAvailabilitySlotRepository slots,
     IVeterinarianRepository veterinarians,
+    IPetVerificationClient petVerification,
     IUnitOfWork unitOfWork)
 {
     public async Task<AppointmentDto> HandleAsync(ScheduleAppointmentCommand command, CancellationToken cancellationToken)
     {
         ScheduleAppointmentValidator.Validate(command);
+
+        // Anti-corruption check against the Pet Service — booking depends on this succeeding.
+        // If the Pet Service is briefly unreachable, the resilience handler on its HttpClient
+        // (see Infrastructure/DependencyInjection) retries transparently before this call ever
+        // throws.
+        var verification = await petVerification.VerifyAsync(command.PetId, command.OwnerId, cancellationToken);
+        if (!verification.Exists)
+        {
+            throw new KeyNotFoundException($"Pet '{command.PetId}' was not found.");
+        }
+
+        if (!verification.IsOwnedByOwner)
+        {
+            throw new PetOwnershipException(command.PetId, command.OwnerId);
+        }
 
         var slot = await slots.GetByIdAsync(command.AvailabilitySlotId, cancellationToken)
             ?? throw new KeyNotFoundException($"Availability slot '{command.AvailabilitySlotId}' was not found.");

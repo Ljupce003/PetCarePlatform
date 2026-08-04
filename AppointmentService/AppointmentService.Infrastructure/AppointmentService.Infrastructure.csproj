@@ -19,6 +19,8 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3"/>
+        <!-- HttpClient factory + Polly-based retry/circuit-breaker/timeout for the Pet Service client. -->
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.8.0"/>
     </ItemGroup>
 
 </Project>
