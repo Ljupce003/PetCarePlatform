@@ -7,7 +7,7 @@ namespace TreatmentAndNotificationService.API.Controllers;
 
 [ApiController]
 [Route("api/treatments")]
-[Authorize]
+// [Authorize]
 public class TreatmentsController : ControllerBase
 {
     private readonly ITreatmentApplicationService _treatmentApplicationService;

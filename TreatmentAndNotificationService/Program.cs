@@ -65,5 +65,11 @@ app.UseRouting();
 app.MapHealthChecks("/health");
 app.MapControllers();
 
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<TreatmentDbContext>();
+    await context.Database.MigrateAsync();
+    await TreatmentDbContextSeeder.SeedAsync(context);
+}
 
 app.Run();
