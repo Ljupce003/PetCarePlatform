@@ -94,12 +94,12 @@ Implement use cases for appointment workflow.
 ---
 
 ## 4. Infrastructure layer
-- [ ] Create the EF Core `DbContext`.
-- [ ] Configure entity mappings for clinics, veterinarians, slots, and appointments.
-- [ ] Implement repository interfaces and concrete repositories.
-- [ ] Add migrations.
-- [ ] Seed clinics, veterinarians, and availability slots for demo data.
-- [ ] Ensure the service uses its own PostgreSQL database.
+- [x] Create the EF Core `DbContext`.
+- [x] Configure entity mappings for clinics, veterinarians, slots, and appointments.
+- [x] Implement repository interfaces and concrete repositories.
+- [x] Add migrations.
+- [x] Seed clinics, veterinarians, and availability slots for demo data.
+- [x] Ensure the service uses its own PostgreSQL database.
 
 ### Acceptance criteria
 - Appointment data is isolated in the Appointment Service database.

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using AppointmentService.Application;
+using AppointmentService.Application.Abstractions;
 using AppointmentService.Infrastructure.Persistence;
 
 namespace AppointmentService.Infrastructure;
@@ -21,6 +22,15 @@ public static class DependencyInjection
                 "or the ConnectionStrings__Database environment variable.");
 
         services.AddDbContext<AppointmentDbContext>(options => options.UseNpgsql(connectionString));
+
+        // The DbContext itself implements IUnitOfWork (see AppointmentDbContext), so every
+        // handler that loaded its entities through one of the repositories below commits
+        // through the very same context.
+        services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<AppointmentDbContext>());
+        services.AddScoped<IClinicRepository, ClinicRepository>();
+        services.AddScoped<IVeterinarianRepository, VeterinarianRepository>();
+        services.AddScoped<IAvailabilitySlotRepository, AvailabilitySlotRepository>();
+        services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
         services.AddAppointmentServiceApplication();
         return services;
