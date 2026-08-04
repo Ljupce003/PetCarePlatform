@@ -30,6 +30,13 @@ public class Veterinarian
         Update(fullName, specialization, licenseNumber);
     }
 
+    /// <summary>Same purpose as <see cref="Clinic.Seed"/>, for demo/seed data.</summary>
+    public static Veterinarian Seed(Guid veterinarianId, Guid clinicId, string fullName, string specialization, string licenseNumber)
+    {
+        var veterinarian = new Veterinarian(clinicId, fullName, specialization, licenseNumber) { VeterinarianId = veterinarianId };
+        return veterinarian;
+    }
+
     public void Update(string fullName, string specialization, string licenseNumber)
     {
         if (string.IsNullOrWhiteSpace(fullName))

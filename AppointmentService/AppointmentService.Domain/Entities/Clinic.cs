@@ -19,6 +19,17 @@ public class Clinic
         Update(name, location, address);
     }
 
+    /// <summary>
+    /// Creates a clinic with a known, fixed id instead of a random one. Used by the
+    /// Infrastructure layer's demo seed data, so a presentation can reference clinics/
+    /// veterinarians/slots by a stable id instead of having to search for them first.
+    /// </summary>
+    public static Clinic Seed(Guid clinicId, string name, string location, string address)
+    {
+        var clinic = new Clinic(name, location, address) { ClinicId = clinicId };
+        return clinic;
+    }
+
     public void Update(string name, string location, string address)
     {
         if (string.IsNullOrWhiteSpace(name))

@@ -37,30 +37,30 @@ Your work must cover business logic, service discovery, service-to-service commu
 You must model the appointment domain as a separate business context.
 
 ### Clinic entity
-- [ ] Create the `Clinic` entity.
-- [ ] Add relevant properties and validation.
+- [x] Create the `Clinic` entity.
+- [x] Add relevant properties and validation.
 
 ### Veterinarian entity
-- [ ] Create the `Veterinarian` entity.
-- [ ] Add specialization and availability information.
+- [x] Create the `Veterinarian` entity.
+- [x] Add specialization and availability information.
 
 ### AvailabilitySlot entity
-- [ ] Create the `AvailabilitySlot` entity.
-- [ ] Define rules for slot validity and conflicts.
-- [ ] Prevent double-booking and expired slots.
+- [x] Create the `AvailabilitySlot` entity.
+- [x] Define rules for slot validity and conflicts.
+- [x] Prevent double-booking and expired slots.
 
 ### Appointment entity
-- [ ] Create the `Appointment` entity.
-- [ ] Add fields for status, date, duration, clinic, veterinarian, and pet reference.
-- [ ] Implement state transitions such as Scheduled → Cancelled/Completed.
+- [x] Create the `Appointment` entity.
+- [x] Add fields for status, date, duration, clinic, veterinarian, and pet reference.
+- [x] Implement state transitions such as Scheduled → Cancelled/Completed.
 
 ### Business rules
-- [ ] Implement booking rules.
-- [ ] Implement conflict detection.
-- [ ] Prevent double booking.
-- [ ] Implement cancellation rules.
-- [ ] Implement reschedule rules.
-- [ ] Define allowed transitions for appointment states.
+- [x] Implement booking rules.
+- [x] Implement conflict detection.
+- [x] Prevent double booking.
+- [x] Implement cancellation rules.
+- [x] Implement reschedule rules.
+- [x] Define allowed transitions for appointment states.
 
 ### Acceptance criteria
 - The domain layer enforces appointment business rules without relying on the API layer.
@@ -71,21 +71,21 @@ You must model the appointment domain as a separate business context.
 Implement use cases for appointment workflow.
 
 ### Commands
-- [ ] Implement `ScheduleAppointment`
-- [ ] Implement `CancelAppointment`
-- [ ] Implement `RescheduleAppointment`
+- [x] Implement `ScheduleAppointment`
+- [x] Implement `CancelAppointment`
+- [x] Implement `RescheduleAppointment`
 
 ### Queries
-- [ ] Implement `SearchClinics`
-- [ ] Implement `SearchVeterinarians`
-- [ ] Implement `SearchAvailableSlots`
-- [ ] Implement `GetUpcomingAppointments`
+- [x] Implement `SearchClinics`
+- [x] Implement `SearchVeterinarians`
+- [x] Implement `SearchAvailableSlots`
+- [x] Implement `GetUpcomingAppointments`
 
 ### DTOs and validation
-- [ ] Create appointment-related DTOs.
-- [ ] Create clinic and veterinarian DTOs.
-- [ ] Add command and query validators.
-- [ ] Implement mapping between domain entities and DTOs.
+- [x] Create appointment-related DTOs.
+- [x] Create clinic and veterinarian DTOs.
+- [x] Add command and query validators.
+- [x] Implement mapping between domain entities and DTOs.
 
 ### Acceptance criteria
 - Appointment operations are exposed through well-defined application services.
@@ -94,12 +94,12 @@ Implement use cases for appointment workflow.
 ---
 
 ## 4. Infrastructure layer
-- [ ] Create the EF Core `DbContext`.
-- [ ] Configure entity mappings for clinics, veterinarians, slots, and appointments.
-- [ ] Implement repository interfaces and concrete repositories.
-- [ ] Add migrations.
-- [ ] Seed clinics, veterinarians, and availability slots for demo data.
-- [ ] Ensure the service uses its own PostgreSQL database.
+- [x] Create the EF Core `DbContext`.
+- [x] Configure entity mappings for clinics, veterinarians, slots, and appointments.
+- [x] Implement repository interfaces and concrete repositories.
+- [x] Add migrations.
+- [x] Seed clinics, veterinarians, and availability slots for demo data.
+- [x] Ensure the service uses its own PostgreSQL database.
 
 ### Acceptance criteria
 - Appointment data is isolated in the Appointment Service database.
