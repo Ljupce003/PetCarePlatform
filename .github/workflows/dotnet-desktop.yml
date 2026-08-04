@@ -40,9 +40,9 @@ name: .NET Core Desktop
 
 on:
   push:
-    branches: [ "appointment-service" ]
+#    branches: [ "appointment-service" , "main" ]
   pull_request:
-    branches: [ "appointment-service" ]
+#    branches: [ "appointment-service" , "main" ]
 
 jobs:
 
