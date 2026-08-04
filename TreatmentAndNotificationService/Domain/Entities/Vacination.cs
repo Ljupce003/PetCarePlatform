@@ -1,3 +1,5 @@
+using TreatmentAndNotificationService.Application.Models;
+
 namespace TreatmentAndNotificationService.Domain.Entities;
 
 public class Vaccination
@@ -37,5 +39,8 @@ public class Vaccination
         BatchNumber = string.IsNullOrWhiteSpace(batchNumber) ? null : batchNumber.Trim();
         CreatedAtUtc = DateTimeOffset.UtcNow;
     }
+    
+    public static VaccinationDto ToDto(Vaccination item) => new VaccinationDto(item.Id, item.PetId, item.OwnerId,
+        item.VeterinarianId, item.VaccineName, item.AdministeredOn, item.NextDueOn, item.BatchNumber);
     
 }

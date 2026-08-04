@@ -1,3 +1,5 @@
+using TreatmentAndNotificationService.Application.Models;
+
 namespace TreatmentAndNotificationService.Domain.Entities;
 
 public class MedicalExamination
@@ -42,4 +44,8 @@ public class MedicalExamination
         Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
         CreatedAtUtc = DateTimeOffset.UtcNow;
     }
+    
+    public static MedicalExaminationDto ToDto(MedicalExamination item) => new(item.Id, item.PetId,
+        item.OwnerId, item.VeterinarianId, item.AppointmentId, item.ExaminedAtUtc, item.Diagnosis,
+        item.TreatmentPlan, item.Medications, item.NextControlAtUtc, item.Notes);
 }
