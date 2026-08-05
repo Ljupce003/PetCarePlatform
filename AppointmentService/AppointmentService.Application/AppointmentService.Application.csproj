@@ -15,8 +15,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Only the DI abstractions, so this layer can expose its own registration method. -->
+        <!-- DI abstractions so this layer can expose its own registration method, and logging
+             abstractions so handlers can log a failed (non-fatal) event publish. -->
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10"/>
     </ItemGroup>
 
 </Project>

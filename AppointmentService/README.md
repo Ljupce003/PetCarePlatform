@@ -3,6 +3,54 @@
 Notes on the integration points that are deliberately left as scaffolding for now, so whoever
 wires up the real infrastructure (or future you) doesn't have to reverse-engineer the plan.
 
+## Kafka integration events
+
+Implemented in `Shared/Messaging/KafkaMessaging.cs` (shared building block, same reasoning as the
+Consul code — reusable by every service, not Appointment-Service-specific) and the event contracts
+in `Shared/AppointmentEvents/` (already defined before this section — the field shapes below are
+whatever Treatment & Notification Service expects to consume).
+
+Published on topic `petcare.appointments` (`PetCareTopics.Appointments`), one event per lifecycle
+transition:
+
+- **`AppointmentScheduledEvent`** — after `ScheduleAppointmentHandler` commits a new booking.
+- **`AppointmentCancelledEvent`** — after `CancelAppointmentHandler` commits a cancellation.
+- **`AppointmentRescheduledEvent`** — after `RescheduleAppointmentHandler` commits a slot change.
+
+Every event goes out wrapped in an `IntegrationEventEnvelope` (`EventType`, `Payload` as JSON,
+`OccurredAtUtc`, `CorrelationId`) — consumers can route on `EventType` without deserializing the
+payload first. `CorrelationId` (and the Kafka message key) is the event's own `EventId`, so
+retries/replays of the same occurrence land on the same partition in order.
+
+Reliability / idempotency: the producer is configured with `Acks.All` + `EnableIdempotence = true`
+(the producer-side guarantee against duplicate/reordered records on retry). Publishing only ever
+happens **after** the database commit succeeds, and a failed publish is logged as a warning, not
+thrown — Kafka being briefly unreachable doesn't turn an already-successful booking/cancel/
+reschedule into an error response to the caller. This is "at-least-once, non-blocking," not a full
+transactional outbox — if you need a stronger guarantee later (no dropped events if Kafka is down
+for longer than a request), the next step is writing the event to an outbox table in the same
+transaction as the appointment change and having a background process publish from there instead.
+
+Configuration (`appsettings.json`, overridable via `Kafka__*` env vars):
+
+```json
+"Kafka": { "BootstrapServers": "localhost:29092", "ClientId": "appointment-service" }
+```
+
+In Docker (`docker-compose.yml`), a single-node KRaft-mode `kafka` container (`apache/kafka:4.1.0`,
+no Zookeeper needed) is started; `appointment-service` points at `kafka:9092` (the internal
+listener) once it's healthy.
+
+**To test:** call `POST /api/appointments` (or `/cancel`, `/reschedule`) from Swagger or the
+`.http` file — each one publishes to `petcare.appointments` after it responds. To see the raw
+messages without waiting for Treatment & Notification Service to consume them, exec into the
+Kafka container:
+
+```sh
+docker exec -it petcare-kafka /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 --topic petcare.appointments --from-beginning
+```
+
 ## Keycloak / client-credentials authentication
 
 The Appointment Service calls the Pet Service over HTTP (`IPetVerificationClient` →
