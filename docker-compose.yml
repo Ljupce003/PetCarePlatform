@@ -11,6 +11,33 @@ services:
       timeout: 3s
       retries: 20
 
+  kafka:
+    image: apache/kafka:4.1.0
+    container_name: petcare-kafka
+    hostname: kafka
+    ports:
+      - "29092:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: CONTROLLER://:9093,PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 8s
+      timeout: 5s
+      retries: 25
+
   pet-db:
     image: postgres:17-alpine
     container_name: petcare-pet-db
@@ -95,6 +122,8 @@ services:
       ServiceRegistration__Id: "appointment-service-1"
       ServiceRegistration__Address: "appointment-service"
       ServiceRegistration__Port: "8080"
+      Kafka__BootstrapServers: "kafka:9092"
+      Kafka__ClientId: "appointment-service"
     ports:
       - "5102:8080"
     depends_on:
@@ -103,6 +132,8 @@ services:
       pet-service:
         condition: service_started
       consul:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
 
   treatment-and-notification-service:

@@ -1,6 +1,9 @@
 using AppointmentService.Application.Abstractions;
 using AppointmentService.Application.Dtos;
 using AppointmentService.Application.Exceptions;
+using Microsoft.Extensions.Logging;
+using Shared.AppointmentEvents;
+using Shared.Messaging;
 
 namespace AppointmentService.Application.Commands;
 
@@ -37,7 +40,9 @@ public static class RescheduleAppointmentValidator
 public sealed class RescheduleAppointmentHandler(
     IAppointmentRepository appointments,
     IAvailabilitySlotRepository slots,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IIntegrationEventPublisher eventPublisher,
+    ILogger<RescheduleAppointmentHandler> logger)
 {
     public async Task<AppointmentDto> HandleAsync(RescheduleAppointmentCommand command, CancellationToken cancellationToken)
     {
@@ -63,6 +68,27 @@ public sealed class RescheduleAppointmentHandler(
         appointment.Reschedule(newSlot.AvailabilitySlotId, newSlot.VeterinarianId, newSlot.StartsAtUtc, newSlot.EndsAtUtc);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await eventPublisher.PublishAsync(
+                PetCareTopics.Appointments,
+                new AppointmentRescheduledEvent(
+                    Guid.NewGuid(),
+                    appointment.AppointmentId,
+                    appointment.PetId,
+                    appointment.OwnerId,
+                    appointment.VeterinarianId,
+                    appointment.StartsAtUtc,
+                    appointment.EndsAtUtc),
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception,
+                "Appointment {AppointmentId} was rescheduled but publishing AppointmentRescheduledEvent to Kafka failed.",
+                appointment.AppointmentId);
+        }
 
         return appointment.ToDto();
     }

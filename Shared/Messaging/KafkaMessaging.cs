@@ -47,7 +47,12 @@ public sealed class KafkaIntegrationEventPublisher : IIntegrationEventPublisher,
             BootstrapServers = options.Value.BootstrapServers,
             ClientId = options.Value.ClientId,
             Acks = Acks.All,
-            EnableIdempotence = true
+            EnableIdempotence = true,
+            // Default is 5 minutes, which would otherwise leave a caller awaiting PublishAsync
+            // stuck for that long if the broker is unreachable (e.g. local `dotnet run` without
+            // Docker). 10s is enough to fail fast; callers are expected to treat a failed publish
+            // as non-fatal to the business operation that already committed (see command handlers).
+            MessageTimeoutMs = 10_000
         };
         _producer = new ProducerBuilder<string, string>(config).Build();
     }
