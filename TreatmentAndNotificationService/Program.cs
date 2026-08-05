@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Converters;
-using TreatmentAndNotificationService.Repository;
-using TreatmentAndNotificationService.Repository.Impl;
-using TreatmentAndNotificationService.Service;
-using TreatmentAndNotificationService.Service.Impl;
+using TreatmentAndNotificationService.Application.Services;
+using TreatmentAndNotificationService.Application.Services.Impl;
+using TreatmentAndNotificationService.Infrastructure.Persistence;
+using TreatmentAndNotificationService.Infrastructure.Persistence.RepoImpl;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,13 +19,19 @@ builder.Services.AddControllers()
 
 builder.Services.AddHealthChecks();
 
-builder.Services.AddDbContext<TreatmentNotificationDbContext>(options =>
+builder.Services.AddDbContext<TreatmentDbContext>(options =>
 {
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
-builder.Services.AddTransient<ITreatmentRepository, TreatmentRepository>();
-builder.Services.AddTransient<ITreatmentService, TreatmentService>();
+//Repos
+builder.Services.AddScoped<IMedicalExaminationRepository, MedicalExaminationRepository>();
+builder.Services.AddScoped<IVaccinationRepository, VaccinationRepository>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+
+//Services
+builder.Services.AddScoped<ITreatmentApplicationService, TreatmentApplicationService>();
+builder.Services.AddScoped<IAppointmentNotificationApplicationService, AppointmentNotificationApplicationService>();
 
 
 builder.Services.AddEndpointsApiExplorer();

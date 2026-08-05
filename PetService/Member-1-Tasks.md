@@ -72,27 +72,27 @@ You must model the Pet domain as a self-contained business domain.
 Implement use cases for the Pet domain.
 
 ### Commands
-- [ ] Implement `CreateOwner`
-- [ ] Implement `UpdateOwner`
-- [ ] Implement `DeleteOwner`
-- [ ] Implement `RegisterPet`
-- [ ] Implement `UpdatePet`
-- [ ] Implement `DeletePet`
+- [x] Implement `CreateOwner`
+- [x] Implement `UpdateOwner`
+- [x] Implement `DeleteOwner`
+- [x] Implement `RegisterPet`
+- [x] Implement `UpdatePet`
+- [x] Implement `DeletePet`
 
 ### Queries
-- [ ] Implement `GetPetById`
-- [ ] Implement `GetAllPets`
-- [ ] Implement `GetOwner`
-- [ ] Implement `GetOwnerPets`
-- [ ] Implement `CheckPetOwnership`
+- [x] Implement `GetPetById`
+- [x] Implement `GetAllPets`
+- [x] Implement `GetOwner`
+- [x] Implement `GetOwnerPets`
+- [x] Implement `CheckPetOwnership`
 
 ### DTOs and validation
-- [ ] Create `PetDto`
-- [ ] Create `OwnerDto`
-- [ ] Create `CreatePetRequest`
-- [ ] Create `UpdatePetRequest`
-- [ ] Add FluentValidation validators for commands and requests.
-- [ ] Implement object mapping between entities and DTOs.
+- [x] Create `PetDto`
+- [x] Create `OwnerDto`
+- [x] Create `CreatePetRequest`
+- [x] Create `UpdatePetRequest`
+- [x] Add FluentValidation validators for commands and requests.
+- [x] Implement object mapping between entities and DTOs.
 
 ### Acceptance criteria
 - All business operations are reachable through application services.
@@ -101,12 +101,12 @@ Implement use cases for the Pet domain.
 ---
 
 ## 4. Infrastructure layer
-- [ ] Create the EF Core `DbContext`.
-- [ ] Configure entity mappings for `Owner` and `Pet`.
-- [ ] Implement repository interfaces and concrete repository classes.
-- [ ] Add database migrations.
-- [ ] Seed sample owners and pets for demo use.
-- [ ] Ensure the service can work with a dedicated PostgreSQL database.
+- [x] Create the EF Core `DbContext`.
+- [x] Configure entity mappings for `Owner` and `Pet`.
+- [x] Implement repository interfaces and concrete repository classes.
+- [x] Add database migrations.
+- [x] Seed sample owners and pets for demo use.
+- [x] Ensure the service can work with a dedicated PostgreSQL database.
 
 ### Acceptance criteria
 - Data is stored in the Pet Service database only.
@@ -118,23 +118,23 @@ Implement use cases for the Pet domain.
 You must expose the Pet Service through REST endpoints.
 
 ### Owner endpoints
-- [ ] `POST /owners`
-- [ ] `GET /owners/{id}`
-- [ ] `GET /owners`
-- [ ] `PUT /owners/{id}`
-- [ ] `DELETE /owners/{id}`
+- [x] `POST /owners`
+- [x] `GET /owners/{id}`
+- [x] `GET /owners`
+- [x] `PUT /owners/{id}`
+- [x] `DELETE /owners/{id}`
 
 ### Pet endpoints
-- [ ] `POST /pets`
-- [ ] `GET /pets/{id}`
-- [ ] `GET /pets`
-- [ ] `PUT /pets/{id}`
-- [ ] `DELETE /pets/{id}`
+- [x] `POST /pets`
+- [x] `GET /pets/{id}`
+- [x] `GET /pets`
+- [x] `PUT /pets/{id}`
+- [x] `DELETE /pets/{id}`
 
 ### Integration endpoints
-- [ ] `GET /owners/{ownerId}/pets`
-- [ ] `GET /pets/{id}/exists?ownerId=...`
-- [ ] `GET /health`
+- [x] `GET /owners/{ownerId}/pets`
+- [x] `GET /pets/{id}/exists?ownerId=...`
+- [x] `GET /health`
 
 ### Acceptance criteria
 - Endpoints return correct status codes and meaningful payloads.
