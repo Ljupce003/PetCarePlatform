@@ -52,6 +52,17 @@ public static class DependencyInjection
 
     private static void AddPetServiceClient(IServiceCollection services, IConfiguration configuration)
     {
+        // Pet Service doesn't have its /api/pets/{id}/exists endpoint (or any seeded pets/owners)
+        // yet, so booking through this service's own Swagger would otherwise always fail
+        // verification. PetService:UseFakeVerification (true in appsettings.Development.json,
+        // false everywhere else) swaps in FakePetVerificationClient instead -- delete this switch
+        // once Pet Service's real endpoint exists.
+        if (bool.TryParse(configuration["PetService:UseFakeVerification"], out var useFakeVerification) && useFakeVerification)
+        {
+            services.AddSingleton<IPetVerificationClient, FakePetVerificationClient>();
+            return;
+        }
+
         var petServiceBaseUrl = configuration["PetService:BaseUrl"]
             ?? throw new InvalidOperationException(
                 "PetService:BaseUrl is not configured. Set PetService:BaseUrl in appsettings or the " +

@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace AppointmentService.Api.Controllers;
 
 [ApiController]
-[Route("api/clinics")]
+[Route("clinics")]
 public sealed class ClinicsController(SearchClinicsHandler handler) : ControllerBase
 {
-    /// <summary>GET /api/clinics?location=Skopje — location filter is optional.</summary>
+    /// <summary>GET /clinics?location=Skopje — location filter is optional.</summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<ClinicDto>>> Search(
         [FromQuery] string? location, CancellationToken cancellationToken)

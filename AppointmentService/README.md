@@ -41,8 +41,9 @@ In Docker (`docker-compose.yml`), a single-node KRaft-mode `kafka` container (`a
 no Zookeeper needed) is started; `appointment-service` points at `kafka:9092` (the internal
 listener) once it's healthy.
 
-**To test:** call `POST /api/appointments` (or `/cancel`, `/reschedule`) from Swagger or the
-`.http` file — each one publishes to `petcare.appointments` after it responds. To see the raw
+**To test:** call `POST /appointments` (or `DELETE /appointments/{id}`, `PUT
+/appointments/{id}/reschedule`) from Swagger or the `.http` file — each one publishes to
+`petcare.appointments` after it responds. To see the raw
 messages without waiting for Treatment & Notification Service to consume them, exec into the
 Kafka container:
 
@@ -168,3 +169,26 @@ This endpoint doesn't exist on the Pet Service yet — it's listed under Pet Ser
 list (section 7, "cross-service integration work"). If the actual shape ends up different, only
 `PetServiceClient`'s private `PetExistsResponse` record and the two lines that map it to
 `PetVerificationResult` need to change — that's the whole point of the anti-corruption layer.
+
+### Testing without Pet Service: FakePetVerificationClient + demo IDs
+
+Pet Service also has no seeded pets/owners yet, so even once `/exists` exists there's nothing real
+to verify against locally. `AppointmentService.Infrastructure/Clients/FakePetVerificationClient.cs`
+stands in for `PetServiceClient` so the whole booking workflow is still testable end-to-end:
+
+- Controlled by `PetService:UseFakeVerification` — `true` in `appsettings.Development.json` (so
+  `dotnet run` / Swagger just works) **and** currently also `true` via `PetService__UseFakeVerification`
+  in `docker-compose.yml` for `appointment-service`, since Pet Service doesn't have a working
+  `/exists` endpoint in Docker either yet. `appsettings.json`'s own default is `false`. Remove the
+  `docker-compose.yml` override once Pet Service implements the real endpoint, so Docker goes back
+  to exercising the real integration.
+- Accepts any non-empty `petId`/`ownerId` as a valid, owned pet — it doesn't try to fake Pet
+  Service's actual data, just unblocks testing this service's own logic (slot reservation,
+  double-booking, Kafka events, etc.) independently of Pet Service's progress.
+- The demo `DemoPetId` (`44444444-4444-4444-4444-444444444444`) and `DemoOwnerId`
+  (`33333333-3333-3333-3333-333333333333`) from `AppointmentDbInitializer` are convenient to reuse
+  since `DemoOwnerId` already has one seeded appointment, so `GET /appointments/upcoming` has
+  something to show against the same owner right away — but any GUIDs work.
+- Once Pet Service has a real `/exists` endpoint and real seed data, set
+  `PetService:UseFakeVerification` to `false` (or delete the setting) to go back to the real
+  `PetServiceClient` — no other code changes needed.

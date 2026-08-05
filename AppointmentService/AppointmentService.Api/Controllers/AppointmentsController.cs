@@ -6,14 +6,14 @@ using Microsoft.AspNetCore.Mvc;
 namespace AppointmentService.Api.Controllers;
 
 [ApiController]
-[Route("api/appointments")]
+[Route("appointments")]
 public sealed class AppointmentsController(
     ScheduleAppointmentHandler scheduleHandler,
     CancelAppointmentHandler cancelHandler,
     RescheduleAppointmentHandler rescheduleHandler,
     GetUpcomingAppointmentsHandler upcomingHandler) : ControllerBase
 {
-    /// <summary>GET /api/appointments/upcoming?ownerId=... — upcoming (still-scheduled) appointments for an owner.</summary>
+    /// <summary>GET /appointments/upcoming?ownerId=... — upcoming (still-scheduled) appointments for an owner.</summary>
     [HttpGet("upcoming")]
     public async Task<ActionResult<IReadOnlyList<AppointmentDto>>> GetUpcoming(
         [FromQuery] Guid ownerId, CancellationToken cancellationToken)
@@ -23,7 +23,7 @@ public sealed class AppointmentsController(
     }
 
     /// <summary>
-    /// POST /api/appointments — books a new appointment. Verifies pet ownership with the Pet
+    /// POST /appointments — books a new appointment. Verifies pet ownership with the Pet
     /// Service and reserves the requested availability slot; fails with 404/403/409 if the pet,
     /// slot, or slot state doesn't check out (see the global exception mapping in Program.cs).
     /// </summary>
@@ -32,20 +32,24 @@ public sealed class AppointmentsController(
         ScheduleAppointmentCommand command, CancellationToken cancellationToken)
     {
         var result = await scheduleHandler.HandleAsync(command, cancellationToken);
-        return Created($"/api/appointments/{result.AppointmentId}", result);
+        return Created($"/appointments/{result.AppointmentId}", result);
     }
 
-    /// <summary>POST /api/appointments/{id}/cancel — only a still-scheduled appointment can be cancelled.</summary>
-    [HttpPost("{id:guid}/cancel")]
+    /// <summary>
+    /// DELETE /appointments/{id}?reason=... — cancels a still-scheduled appointment and frees its
+    /// slot. Reason is optional and passed as a query parameter since DELETE requests don't carry
+    /// a conventional body.
+    /// </summary>
+    [HttpDelete("{id:guid}")]
     public async Task<ActionResult<AppointmentDto>> Cancel(
-        Guid id, [FromBody] CancelAppointmentRequest? request, CancellationToken cancellationToken)
+        Guid id, [FromQuery] string? reason, CancellationToken cancellationToken)
     {
-        var result = await cancelHandler.HandleAsync(new CancelAppointmentCommand(id, request?.Reason), cancellationToken);
+        var result = await cancelHandler.HandleAsync(new CancelAppointmentCommand(id, reason), cancellationToken);
         return Ok(result);
     }
 
-    /// <summary>POST /api/appointments/{id}/reschedule — moves a still-scheduled appointment onto a different open slot.</summary>
-    [HttpPost("{id:guid}/reschedule")]
+    /// <summary>PUT /appointments/{id}/reschedule — moves a still-scheduled appointment onto a different open slot.</summary>
+    [HttpPut("{id:guid}/reschedule")]
     public async Task<ActionResult<AppointmentDto>> Reschedule(
         Guid id, RescheduleAppointmentRequest request, CancellationToken cancellationToken)
     {
@@ -54,7 +58,5 @@ public sealed class AppointmentsController(
         return Ok(result);
     }
 }
-
-public sealed record CancelAppointmentRequest(string? Reason);
 
 public sealed record RescheduleAppointmentRequest(Guid NewAvailabilitySlotId);

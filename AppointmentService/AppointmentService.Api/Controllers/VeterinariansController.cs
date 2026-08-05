@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace AppointmentService.Api.Controllers;
 
 [ApiController]
-[Route("api/veterinarians")]
+[Route("veterinarians")]
 public sealed class VeterinariansController(SearchVeterinariansHandler handler) : ControllerBase
 {
-    /// <summary>GET /api/veterinarians?clinicId=&amp;specialization= — both filters are optional.</summary>
+    /// <summary>GET /veterinarians?clinicId=&amp;specialization= — both filters are optional.</summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<VeterinarianDto>>> Search(
         [FromQuery] Guid? clinicId, [FromQuery] string? specialization, CancellationToken cancellationToken)
