@@ -3,6 +3,76 @@
 Notes on the integration points that are deliberately left as scaffolding for now, so whoever
 wires up the real infrastructure (or future you) doesn't have to reverse-engineer the plan.
 
+## Security and authorization
+
+Keycloak doesn't exist in this repo yet (Member 1's shared-infrastructure task), so this service
+issues and validates its **own** JWTs in the meantime — same shape/claims a real identity provider
+would produce, just backed by a fixed in-memory user/client list instead of a real store. Nothing
+downstream (`[Authorize]`, role checks, `ServiceAccessTokenHandler`) needs to change when Keycloak
+shows up — only the two places listed under "Swapping in Keycloak" below.
+
+### Test users (`AppointmentService.Infrastructure/Security/TestUsers.cs`)
+
+One per role, as requested:
+
+| Username | Password    | Role          | User id (JWT `sub`)                     |
+|----------|-------------|---------------|------------------------------------------|
+| `owner1` | `Owner123!` | `owner`       | `33333333-3333-3333-3333-333333333333` (= `DemoOwnerId`) |
+| `vet1`   | `Vet123!`   | `veterinarian`| `22222222-2222-2222-2222-222222222221` (= `DemoVeterinarianId`) |
+| `admin1` | `Admin123!` | `admin`       | `55555555-5555-5555-5555-555555555553` |
+
+`owner1`/`vet1` deliberately reuse `AppointmentDbInitializer`'s demo ids, so logging in as
+`owner1` gives you a token for the same owner that already has a seeded appointment.
+
+### Logging in (`POST /auth/login`) and calling the API from Swagger
+
+1. `POST /auth/login` with one of the usernames/passwords above → returns
+   `{ "accessToken": "...", "role": "...", "userId": "..." }`.
+2. In Swagger UI (`/swagger`), click **Authorize** (top right) and paste just the `accessToken`
+   value — no `Bearer ` prefix needed, Swagger adds it. Every protected endpoint now sends that
+   token automatically.
+3. The `.http` file captures the token into a variable automatically (see the `client.global.set`
+   scripts after each `/auth/login` call) so the requests below it can reuse `{{ownerToken}}` /
+   `{{adminToken}}` / `{{vetToken}}` directly.
+
+### Authorization rules
+
+- Every controller requires `[Authorize]` (any logged-in role) except `AuthController`
+  (`/auth/login`, `/auth/token` — `[AllowAnonymous]`, obviously) and the health check endpoints
+  (no `[Authorize]` metadata at all, since Consul's own health check hits `/health` unauthenticated).
+- `POST /appointments`, `DELETE /appointments/{id}`, `PUT /appointments/{id}/reschedule` additionally
+  require `[Authorize(Roles = "owner,admin")]` — a `veterinarian` token can browse everything but
+  can't book/cancel/reschedule (try it in the `.http` file, look for the 403).
+- **Known gap:** queries that take an `ownerId`/similar parameter (e.g.
+  `GET /appointments/upcoming?ownerId=...`) don't yet check that the caller's own `sub` claim
+  matches the id in the query — any authenticated user can currently query any owner's
+  appointments. Fixing this properly needs a stable mapping between Pet Service's/Keycloak's owner
+  identity and the `ownerId` GUIDs used throughout this service, which doesn't exist yet either.
+
+### Service-to-service authentication
+
+`LocalServiceAccessTokenProvider` (`AppointmentService.Infrastructure/Security/`) replaces the old
+no-op `NullServiceAccessTokenProvider`: every outgoing call to Pet Service now carries a real,
+signed bearer token (role `service`, `client_id: appointment-service`), attached the same way as
+before via `ServiceAccessTokenHandler`. Pet Service doesn't validate it yet (it has no JWT bearer
+authentication wired up), so this doesn't do anything end-to-end yet — but this service's half of
+"authenticate correctly" is now real rather than sending no token at all.
+
+### Swapping in Keycloak later
+
+1. Point `AddJwtBearer`'s `TokenValidationParameters` (`Program.cs`) at Keycloak's issuer/JWKS
+   instead of the local symmetric key (`options.Authority = "http://keycloak:8080/realms/petcare"`
+   is normally enough — Keycloak's own metadata endpoint supplies the rest).
+2. Replace `LocalServiceAccessTokenProvider`'s registration in
+   `AppointmentService.Infrastructure/DependencyInjection.cs` with a real implementation that POSTs
+   `grant_type=client_credentials` to Keycloak's token endpoint and caches the result (see the
+   still-relevant steps under "Keycloak / client-credentials authentication" below, which predate
+   this section).
+3. `AuthController`, `JwtTokenService`, `TestUsers`, `TestClients` can all be deleted — real login
+   happens against Keycloak directly (or via the API Gateway), not this service.
+4. `[Authorize]`/`[Authorize(Roles = ...)]` on the controllers don't change at all — they just
+   start validating real tokens instead of local ones.
+
 ## Kafka integration events
 
 Implemented in `Shared/Messaging/KafkaMessaging.cs` (shared building block, same reasoning as the
@@ -60,15 +130,20 @@ like this one are supposed to carry an OAuth2 **client-credentials** access toke
 no Keycloak (or any identity provider) running anywhere in this repo yet — that's Member 1's
 "Keycloak" shared-infrastructure task.
 
-What's already in place, waiting for it:
+**Update (section 9):** this no longer sends no token at all — see "Security and authorization"
+above. `LocalServiceAccessTokenProvider` now attaches a real, locally-signed token; Pet Service
+just doesn't validate it yet. What's in place:
 
 - `AppointmentService.Infrastructure/Security/ServiceAccessTokenHandler.cs` — a `DelegatingHandler`
   already wired into the Pet Service `HttpClient` pipeline. It attaches
   `Authorization: Bearer <token>` to every outgoing request automatically.
 - `IServiceAccessTokenProvider` — the abstraction `ServiceAccessTokenHandler` asks for a token.
-- `NullServiceAccessTokenProvider` — the only implementation that exists right now. It returns
-  `null`, so requests currently go out **without** an Authorization header. This is registered in
-  `AddPetServiceClient(...)` inside `AppointmentService.Infrastructure/DependencyInjection.cs`.
+- `LocalServiceAccessTokenProvider` — the implementation registered today. Issues a token via
+  `JwtTokenService` for `TestClients.AppointmentService` (`appointment-service` /
+  `appointment-secret`). Registered in `AddPetServiceClient(...)` inside
+  `AppointmentService.Infrastructure/DependencyInjection.cs`.
+- `NullServiceAccessTokenProvider` — still present, unregistered, kept only as the "send nothing"
+  reference implementation.
 
 ### What to do once Keycloak exists
 
@@ -90,11 +165,14 @@ What's already in place, waiting for it:
    ```csharp
    services.AddSingleton<IServiceAccessTokenProvider, KeycloakServiceAccessTokenProvider>();
    ```
-   Nothing else changes — `ServiceAccessTokenHandler` and `PetServiceClient` already only depend
-   on the interface.
+   (replacing `LocalServiceAccessTokenProvider`). Nothing else changes — `ServiceAccessTokenHandler`
+   and `PetServiceClient` already only depend on the interface.
 5. The Pet Service (and any other service we call) needs to actually validate that token on its
    side too (JWT bearer authentication, audience/issuer checks) — that's a separate piece of work
    on each service that owns an endpoint we call.
+6. Also swap `AddJwtBearer`'s validation (`Program.cs`) and delete the local login/token
+   scaffolding — see "Swapping in Keycloak later" under "Security and authorization" above for the
+   full list.
 
 ## Consul / service discovery
 
