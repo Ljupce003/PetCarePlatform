@@ -169,13 +169,13 @@ Expose appointment functionality through REST endpoints.
 ---
 
 ## 9. Security and authorization
-- [ ] Implement JWT authentication.
-- [ ] Add role-based authorization for:
-  - [ ] `owner`
-  - [ ] `veterinarian`
-  - [ ] `admin`
-- [ ] Protect booking and rescheduling actions appropriately.
-- [ ] Ensure service-to-service calls authenticate correctly.
+- [x] Implement JWT authentication.
+- [x] Add role-based authorization for:
+  - [x] `owner`
+  - [x] `veterinarian`  
+  - [x] `admin` 
+- [x] Protect booking and rescheduling actions appropriately.
+- [x] Ensure service-to-service calls authenticate correctly.
 
 ### Acceptance criteria
 - Unauthorized users cannot manipulate appointments.
