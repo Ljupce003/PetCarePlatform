@@ -139,11 +139,11 @@ This is one of the most important parts of your work.
 Publish appointment lifecycle events for downstream processing.
 
 ### Producers
-- [ ] Implement `AppointmentScheduled` event publishing.
-- [ ] Implement `AppointmentCancelled` event publishing.
-- [ ] Implement `AppointmentRescheduled` event publishing.
-- [ ] Use an event envelope with event type, payload, timestamp, and correlation ID.
-- [ ] Ensure the event publisher is reliable and idempotent where possible.
+- [x] Implement `AppointmentScheduled` event publishing.
+- [x] Implement `AppointmentCancelled` event publishing.
+- [x] Implement `AppointmentRescheduled` event publishing.
+- [x] Use an event envelope with event type, payload, timestamp, and correlation ID.
+- [x] Ensure the event publisher is reliable and idempotent where possible.
 
 ### Acceptance criteria
 - Treatment & Notification Service can consume the appointment events successfully.
