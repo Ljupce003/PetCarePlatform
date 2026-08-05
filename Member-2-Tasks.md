@@ -154,13 +154,13 @@ Publish appointment lifecycle events for downstream processing.
 ## 8. REST API layer
 Expose appointment functionality through REST endpoints.
 
-- [ ] `GET /clinics`
-- [ ] `GET /veterinarians`
-- [ ] `GET /slots`
-- [ ] `POST /appointments`
-- [ ] `DELETE /appointments/{id}`
-- [ ] `PUT /appointments/{id}/reschedule`
-- [ ] `GET /health`
+- [x] `GET /clinics`
+- [x] `GET /veterinarians`
+- [x] `GET /slots`
+- [x] `POST /appointments`
+- [x] `DELETE /appointments/{id}`
+- [x] `PUT /appointments/{id}/reschedule`
+- [x] `GET /health`
 
 ### Acceptance criteria
 - The API supports the complete appointment workflow.
@@ -169,13 +169,13 @@ Expose appointment functionality through REST endpoints.
 ---
 
 ## 9. Security and authorization
-- [ ] Implement JWT authentication.
-- [ ] Add role-based authorization for:
-  - [ ] `owner`
-  - [ ] `veterinarian`
-  - [ ] `admin`
-- [ ] Protect booking and rescheduling actions appropriately.
-- [ ] Ensure service-to-service calls authenticate correctly.
+- [x] Implement JWT authentication.
+- [x] Add role-based authorization for:
+  - [x] `owner`
+  - [x] `veterinarian`  
+  - [x] `admin` 
+- [x] Protect booking and rescheduling actions appropriately.
+- [x] Ensure service-to-service calls authenticate correctly.
 
 ### Acceptance criteria
 - Unauthorized users cannot manipulate appointments.

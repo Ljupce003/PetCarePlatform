@@ -36,6 +36,11 @@ public static class DependencyInjection
         services.AddScoped<IAvailabilitySlotRepository, AvailabilitySlotRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
+        // JwtTokenService issues/is configured for the tokens both /auth/* endpoints (Api layer)
+        // and LocalServiceAccessTokenProvider (below) hand out. See Security/JwtOptions.cs.
+        services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+        services.AddSingleton<JwtTokenService>();
+
         AddPetServiceClient(services, configuration);
 
         // Registers this instance in Consul on startup (deregisters on shutdown) and exposes
@@ -68,8 +73,9 @@ public static class DependencyInjection
                 "PetService:BaseUrl is not configured. Set PetService:BaseUrl in appsettings or the " +
                 "PetService__BaseUrl environment variable.");
 
-        // Inert until a real IServiceAccessTokenProvider is registered (see NullServiceAccessTokenProvider).
-        services.AddSingleton<IServiceAccessTokenProvider, NullServiceAccessTokenProvider>();
+        // Attaches a real (locally-signed) token to every Pet Service call — see
+        // LocalServiceAccessTokenProvider for what changes once Keycloak exists.
+        services.AddSingleton<IServiceAccessTokenProvider, LocalServiceAccessTokenProvider>();
         services.AddTransient<ServiceAccessTokenHandler>();
 
         services.AddHttpClient<IPetVerificationClient, PetServiceClient>(client =>

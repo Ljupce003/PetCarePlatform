@@ -1,12 +1,14 @@
 using AppointmentService.Application.Commands;
 using AppointmentService.Application.Dtos;
 using AppointmentService.Application.Queries;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppointmentService.Api.Controllers;
 
 [ApiController]
 [Route("appointments")]
+[Authorize]
 public sealed class AppointmentsController(
     ScheduleAppointmentHandler scheduleHandler,
     CancelAppointmentHandler cancelHandler,
@@ -28,6 +30,7 @@ public sealed class AppointmentsController(
     /// slot, or slot state doesn't check out (see the global exception mapping in Program.cs).
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = "owner,admin")]
     public async Task<ActionResult<AppointmentDto>> Schedule(
         ScheduleAppointmentCommand command, CancellationToken cancellationToken)
     {
@@ -41,6 +44,7 @@ public sealed class AppointmentsController(
     /// a conventional body.
     /// </summary>
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "owner,admin")]
     public async Task<ActionResult<AppointmentDto>> Cancel(
         Guid id, [FromQuery] string? reason, CancellationToken cancellationToken)
     {
@@ -50,6 +54,7 @@ public sealed class AppointmentsController(
 
     /// <summary>PUT /appointments/{id}/reschedule — moves a still-scheduled appointment onto a different open slot.</summary>
     [HttpPut("{id:guid}/reschedule")]
+    [Authorize(Roles = "owner,admin")]
     public async Task<ActionResult<AppointmentDto>> Reschedule(
         Guid id, RescheduleAppointmentRequest request, CancellationToken cancellationToken)
     {

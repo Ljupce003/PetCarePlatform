@@ -1,11 +1,13 @@
 using AppointmentService.Application.Dtos;
 using AppointmentService.Application.Queries;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppointmentService.Api.Controllers;
 
 [ApiController]
 [Route("slots")]
+[Authorize]
 public sealed class AvailabilitySlotsController(SearchAvailableSlotsHandler handler) : ControllerBase
 {
     /// <summary>

@@ -1,7 +1,11 @@
+using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
+using AppointmentService.Api.OpenApi;
 using AppointmentService.Application.Exceptions;
 using AppointmentService.Domain.Exceptions;
 using AppointmentService.Infrastructure;
@@ -31,7 +35,37 @@ else
 
 builder.Services.AddControllers();
 
-builder.Services.AddOpenApi();
+// Validates the JWTs this same service issues from /auth/login and /auth/token -- a stand-in for
+// validating tokens from Keycloak until that exists (see README's "Security and authorization").
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var jwtSigningKey = jwtSection["SigningKey"]
+    ?? throw new InvalidOperationException(
+        "Jwt:SigningKey is not configured. Set Jwt:SigningKey in appsettings or the Jwt__SigningKey environment variable.");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtSection["Issuer"],
+            ValidateAudience = true,
+            ValidAudience = jwtSection["Audience"],
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+    });
+builder.Services.AddAuthorization();
+
+builder.Services.AddOpenApi(options =>
+{
+    // Lets Swagger UI show an "Authorize" button and attach the Bearer token to requests.
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    options.AddOperationTransformer<AuthorizeOperationTransformer>();
+});
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppointmentDbContext>("appointment-database", tags: ["ready"]);
@@ -52,13 +86,17 @@ app.UseSwaggerUI(options =>
 });
 
 // /health covers the service and its dependencies; /health/live only asks whether the
-// process is up, which is what a container orchestrator should restart on.
+// process is up, which is what a container orchestrator should restart on. Neither carries
+// [Authorize] metadata, so both stay reachable without a token (Consul's health check depends on it).
 app.MapHealthChecks("/health", new HealthCheckOptions { ResponseWriter = WriteHealthResponseAsync });
 app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = _ => false,
     ResponseWriter = WriteHealthResponseAsync
 });
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
