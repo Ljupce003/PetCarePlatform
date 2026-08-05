@@ -154,13 +154,13 @@ Publish appointment lifecycle events for downstream processing.
 ## 8. REST API layer
 Expose appointment functionality through REST endpoints.
 
-- [ ] `GET /clinics`
-- [ ] `GET /veterinarians`
-- [ ] `GET /slots`
-- [ ] `POST /appointments`
-- [ ] `DELETE /appointments/{id}`
-- [ ] `PUT /appointments/{id}/reschedule`
-- [ ] `GET /health`
+- [x] `GET /clinics`
+- [x] `GET /veterinarians`
+- [x] `GET /slots`
+- [x] `POST /appointments`
+- [x] `DELETE /appointments/{id}`
+- [x] `PUT /appointments/{id}/reschedule`
+- [x] `GET /health`
 
 ### Acceptance criteria
 - The API supports the complete appointment workflow.
