@@ -9,6 +9,7 @@
     <ItemGroup>
         <ProjectReference Include="..\AppointmentService.Application\AppointmentService.Application.csproj"/>
         <ProjectReference Include="..\AppointmentService.Domain\AppointmentService.Domain.csproj"/>
+        <ProjectReference Include="..\..\Shared\Shared.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

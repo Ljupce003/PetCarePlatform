@@ -1,6 +1,9 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using AppointmentService.Application.Exceptions;
+using AppointmentService.Domain.Exceptions;
 using AppointmentService.Infrastructure;
 using AppointmentService.Infrastructure.Persistence;
 
@@ -36,6 +39,10 @@ builder.Services.AddHealthChecks()
 builder.Services.AddAppointmentServiceInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+// Maps the exceptions thrown by the Application/Domain layers to the HTTP status a REST client
+// actually expects, instead of letting everything fall through as a bare 500.
+app.UseExceptionHandler(errorApp => errorApp.Run(HandleExceptionAsync));
 
 app.MapOpenApi();
 app.UseSwaggerUI(options =>
@@ -74,6 +81,43 @@ await using (var scope = app.Services.CreateAsyncScope())
 }
 
 await app.RunAsync();
+
+// Translates domain/application exceptions into the right HTTP status + a small JSON body,
+// instead of the framework's default bare 500 for anything that isn't a plain-old bad request.
+static async Task HandleExceptionAsync(HttpContext context)
+{
+    var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+
+    var (statusCode, title) = exception switch
+    {
+        ValidationException => (StatusCodes.Status400BadRequest, "Validation failed"),
+        KeyNotFoundException => (StatusCodes.Status404NotFound, "Not found"),
+        PetOwnershipException => (StatusCodes.Status403Forbidden, "Pet is not owned by this owner"),
+        SlotAlreadyBookedException or SlotExpiredException or InvalidAppointmentStatusTransitionException
+            => (StatusCodes.Status409Conflict, "Conflict"),
+        _ => (StatusCodes.Status500InternalServerError, "Unexpected error")
+    };
+
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    if (statusCode == StatusCodes.Status500InternalServerError)
+    {
+        logger.LogError(exception, "Unhandled exception while processing {Path}", context.Request.Path);
+    }
+    else
+    {
+        logger.LogInformation(exception, "{Title} while processing {Path}", title, context.Request.Path);
+    }
+
+    context.Response.StatusCode = statusCode;
+    context.Response.ContentType = "application/problem+json";
+    await context.Response.WriteAsJsonAsync(new
+    {
+        title,
+        status = statusCode,
+        detail = exception?.Message,
+        errors = (exception as ValidationException)?.Errors
+    });
+}
 
 // Reports which check failed instead of the default one-word body.
 static Task WriteHealthResponseAsync(HttpContext context, HealthReport report)

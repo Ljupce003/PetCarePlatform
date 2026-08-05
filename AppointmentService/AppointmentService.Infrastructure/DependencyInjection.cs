@@ -6,6 +6,8 @@ using AppointmentService.Application.Abstractions;
 using AppointmentService.Infrastructure.Clients;
 using AppointmentService.Infrastructure.Persistence;
 using AppointmentService.Infrastructure.Security;
+using Shared.Messaging;
+using Shared.ServiceDiscovery;
 
 namespace AppointmentService.Infrastructure;
 
@@ -36,12 +38,31 @@ public static class DependencyInjection
 
         AddPetServiceClient(services, configuration);
 
+        // Registers this instance in Consul on startup (deregisters on shutdown) and exposes
+        // IConsulServiceResolver for looking up other services once they register too.
+        services.AddPetCareConsul(configuration);
+
+        // Publishes AppointmentScheduled/Cancelled/Rescheduled to Kafka (topic: petcare.appointments)
+        // so Treatment & Notification Service can react to them.
+        services.AddPetCareKafka(configuration);
+
         services.AddAppointmentServiceApplication();
         return services;
     }
 
     private static void AddPetServiceClient(IServiceCollection services, IConfiguration configuration)
     {
+        // Pet Service doesn't have its /api/pets/{id}/exists endpoint (or any seeded pets/owners)
+        // yet, so booking through this service's own Swagger would otherwise always fail
+        // verification. PetService:UseFakeVerification (true in appsettings.Development.json,
+        // false everywhere else) swaps in FakePetVerificationClient instead -- delete this switch
+        // once Pet Service's real endpoint exists.
+        if (bool.TryParse(configuration["PetService:UseFakeVerification"], out var useFakeVerification) && useFakeVerification)
+        {
+            services.AddSingleton<IPetVerificationClient, FakePetVerificationClient>();
+            return;
+        }
+
         var petServiceBaseUrl = configuration["PetService:BaseUrl"]
             ?? throw new InvalidOperationException(
                 "PetService:BaseUrl is not configured. Set PetService:BaseUrl in appsettings or the " +

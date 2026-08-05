@@ -18,6 +18,7 @@ COPY ["AppointmentService/AppointmentService.Domain/AppointmentService.Domain.cs
 COPY ["AppointmentService/AppointmentService.Application/AppointmentService.Application.csproj", "AppointmentService/AppointmentService.Application/"]
 COPY ["AppointmentService/AppointmentService.Infrastructure/AppointmentService.Infrastructure.csproj", "AppointmentService/AppointmentService.Infrastructure/"]
 COPY ["AppointmentService/AppointmentService.Api/AppointmentService.Api.csproj", "AppointmentService/AppointmentService.Api/"]
+COPY ["Shared/Shared.csproj", "Shared/"]
 RUN dotnet restore "AppointmentService/AppointmentService.Api/AppointmentService.Api.csproj"
 
 COPY . .

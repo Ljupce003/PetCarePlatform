@@ -110,13 +110,13 @@ Implement use cases for appointment workflow.
 ## 5. REST integration with Pet Service
 This is one of the most important parts of your work.
 
-- [ ] Create an `IPetVerificationClient` abstraction.
-- [ ] Implement an `HttpClient`-based client for the Pet Service.
-- [ ] Add an anti-corruption layer so the Appointment Service uses a simplified model.
-- [ ] Implement logic to verify pet ownership before booking.
-- [ ] Add retry policy for transient failures.
-- [ ] Use client-credentials authentication for service-to-service requests.
-- [ ] Resolve the Pet Service address dynamically through Consul.
+- [x] Create an `IPetVerificationClient` abstraction.
+- [x] Implement an `HttpClient`-based client for the Pet Service.
+- [x] Add an anti-corruption layer so the Appointment Service uses a simplified model.
+- [x] Implement logic to verify pet ownership before booking.
+- [x] Add retry policy for transient failures.
+- [x] Use client-credentials authentication for service-to-service requests.
+- [x] Resolve the Pet Service address dynamically through Consul.
 
 ### Acceptance criteria
 - Appointment booking depends on a verified pet ownership check.
@@ -125,10 +125,10 @@ This is one of the most important parts of your work.
 ---
 
 ## 6. Service discovery and infrastructure integration
-- [ ] Register the Appointment Service in Consul.
-- [ ] Configure health checks for the service instance.
-- [ ] Ensure the service can resolve healthy instances at runtime.
-- [ ] Document the service discovery flow for the architecture section.
+- [x] Register the Appointment Service in Consul.
+- [x] Configure health checks for the service instance.
+- [x] Ensure the service can resolve healthy instances at runtime.
+- [x] Document the service discovery flow for the architecture section.
 
 ### Acceptance criteria
 - The service can be discovered by other components in the deployment environment.
@@ -139,11 +139,11 @@ This is one of the most important parts of your work.
 Publish appointment lifecycle events for downstream processing.
 
 ### Producers
-- [ ] Implement `AppointmentScheduled` event publishing.
-- [ ] Implement `AppointmentCancelled` event publishing.
-- [ ] Implement `AppointmentRescheduled` event publishing.
-- [ ] Use an event envelope with event type, payload, timestamp, and correlation ID.
-- [ ] Ensure the event publisher is reliable and idempotent where possible.
+- [x] Implement `AppointmentScheduled` event publishing.
+- [x] Implement `AppointmentCancelled` event publishing.
+- [x] Implement `AppointmentRescheduled` event publishing.
+- [x] Use an event envelope with event type, payload, timestamp, and correlation ID.
+- [x] Ensure the event publisher is reliable and idempotent where possible.
 
 ### Acceptance criteria
 - Treatment & Notification Service can consume the appointment events successfully.

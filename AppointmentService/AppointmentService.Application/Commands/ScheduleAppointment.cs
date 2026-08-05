@@ -2,6 +2,9 @@ using AppointmentService.Application.Abstractions;
 using AppointmentService.Application.Dtos;
 using AppointmentService.Application.Exceptions;
 using AppointmentService.Domain.Entities;
+using Microsoft.Extensions.Logging;
+using Shared.AppointmentEvents;
+using Shared.Messaging;
 
 namespace AppointmentService.Application.Commands;
 
@@ -54,7 +57,9 @@ public sealed class ScheduleAppointmentHandler(
     IAvailabilitySlotRepository slots,
     IVeterinarianRepository veterinarians,
     IPetVerificationClient petVerification,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IIntegrationEventPublisher eventPublisher,
+    ILogger<ScheduleAppointmentHandler> logger)
 {
     public async Task<AppointmentDto> HandleAsync(ScheduleAppointmentCommand command, CancellationToken cancellationToken)
     {
@@ -97,6 +102,33 @@ public sealed class ScheduleAppointmentHandler(
 
         await appointments.AddAsync(appointment, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Published only after the commit above succeeds, so a failed booking never produces an
+        // event downstream services would have to compensate for. A failed *publish*, on the
+        // other hand, is logged rather than thrown -- the appointment is already booked, and
+        // Kafka being briefly unreachable shouldn't turn a successful booking into an error
+        // response.
+        try
+        {
+            await eventPublisher.PublishAsync(
+                PetCareTopics.Appointments,
+                new AppointmentScheduledEvent(
+                    Guid.NewGuid(),
+                    appointment.AppointmentId,
+                    appointment.PetId,
+                    appointment.OwnerId,
+                    appointment.VeterinarianId,
+                    appointment.StartsAtUtc,
+                    appointment.EndsAtUtc,
+                    appointment.Reason),
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception,
+                "Appointment {AppointmentId} was booked but publishing AppointmentScheduledEvent to Kafka failed.",
+                appointment.AppointmentId);
+        }
 
         return appointment.ToDto();
     }

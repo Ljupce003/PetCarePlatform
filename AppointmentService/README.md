@@ -3,6 +3,55 @@
 Notes on the integration points that are deliberately left as scaffolding for now, so whoever
 wires up the real infrastructure (or future you) doesn't have to reverse-engineer the plan.
 
+## Kafka integration events
+
+Implemented in `Shared/Messaging/KafkaMessaging.cs` (shared building block, same reasoning as the
+Consul code — reusable by every service, not Appointment-Service-specific) and the event contracts
+in `Shared/AppointmentEvents/` (already defined before this section — the field shapes below are
+whatever Treatment & Notification Service expects to consume).
+
+Published on topic `petcare.appointments` (`PetCareTopics.Appointments`), one event per lifecycle
+transition:
+
+- **`AppointmentScheduledEvent`** — after `ScheduleAppointmentHandler` commits a new booking.
+- **`AppointmentCancelledEvent`** — after `CancelAppointmentHandler` commits a cancellation.
+- **`AppointmentRescheduledEvent`** — after `RescheduleAppointmentHandler` commits a slot change.
+
+Every event goes out wrapped in an `IntegrationEventEnvelope` (`EventType`, `Payload` as JSON,
+`OccurredAtUtc`, `CorrelationId`) — consumers can route on `EventType` without deserializing the
+payload first. `CorrelationId` (and the Kafka message key) is the event's own `EventId`, so
+retries/replays of the same occurrence land on the same partition in order.
+
+Reliability / idempotency: the producer is configured with `Acks.All` + `EnableIdempotence = true`
+(the producer-side guarantee against duplicate/reordered records on retry). Publishing only ever
+happens **after** the database commit succeeds, and a failed publish is logged as a warning, not
+thrown — Kafka being briefly unreachable doesn't turn an already-successful booking/cancel/
+reschedule into an error response to the caller. This is "at-least-once, non-blocking," not a full
+transactional outbox — if you need a stronger guarantee later (no dropped events if Kafka is down
+for longer than a request), the next step is writing the event to an outbox table in the same
+transaction as the appointment change and having a background process publish from there instead.
+
+Configuration (`appsettings.json`, overridable via `Kafka__*` env vars):
+
+```json
+"Kafka": { "BootstrapServers": "localhost:29092", "ClientId": "appointment-service" }
+```
+
+In Docker (`docker-compose.yml`), a single-node KRaft-mode `kafka` container (`apache/kafka:4.1.0`,
+no Zookeeper needed) is started; `appointment-service` points at `kafka:9092` (the internal
+listener) once it's healthy.
+
+**To test:** call `POST /appointments` (or `DELETE /appointments/{id}`, `PUT
+/appointments/{id}/reschedule`) from Swagger or the `.http` file — each one publishes to
+`petcare.appointments` after it responds. To see the raw
+messages without waiting for Treatment & Notification Service to consume them, exec into the
+Kafka container:
+
+```sh
+docker exec -it petcare-kafka /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server localhost:9092 --topic petcare.appointments --from-beginning
+```
+
 ## Keycloak / client-credentials authentication
 
 The Appointment Service calls the Pet Service over HTTP (`IPetVerificationClient` →
@@ -49,16 +98,59 @@ What's already in place, waiting for it:
 
 ## Consul / service discovery
 
-Same situation: `PetService:BaseUrl` in `appsettings.json` is a plain config value
-(`http://localhost:5224` locally, `http://pet-service:8080` in Docker via the
-`PetService__BaseUrl` env var in `docker-compose.yml`). There's no Consul container and no
-Consul client package anywhere in this repo yet.
+Implemented in `Shared/ServiceDiscovery/ConsulIntegration.cs` (shared building block, not
+Appointment-Service-specific, so PetService/TreatmentAndNotificationService can reuse it the same
+way). Wired up in `AppointmentService.Infrastructure/DependencyInjection.cs` via
+`services.AddPetCareConsul(configuration)`.
 
-Once Consul infrastructure exists (task list section 6), the swap is small: resolve the base
-address through Consul's health API instead of reading it straight from config, before the
-`AddHttpClient<IPetVerificationClient, PetServiceClient>(...)` call in
-`AppointmentService.Infrastructure/DependencyInjection.cs`. `PetServiceClient` itself doesn't need
-to change at all — it only ever sees `HttpClient.BaseAddress`.
+What it does:
+
+- **Registers this instance in Consul on startup**, and deregisters it on shutdown
+  (`ConsulRegistrationHostedService`). The registration includes an HTTP health check pointed at
+  this service's own `/health` endpoint (`Interval: 10s`), so Consul automatically stops routing
+  to an instance that turns unhealthy — no extra health check code needed, it reuses the one
+  from section 1.
+- **Exposes `IConsulServiceResolver`** (`ResolveAsync`/`ResolveAllAsync`) so any client in this
+  service can ask Consul "who is currently healthy for service X" instead of hardcoding an
+  address.
+- **`ServiceDiscoveryHandler`** — a `DelegatingHandler` that, if added to an `HttpClient`'s
+  pipeline, rewrites requests aimed at a logical `http://<name>-service/...` host to whatever
+  Consul currently reports as the healthy address/port for `<name>-service`.
+- Registration failures (e.g. running `dotnet run` locally without Consul up) are logged as a
+  warning, not thrown — same "degrade gracefully" pattern used for the database and the Pet
+  Service client, so the service still starts.
+
+Configuration (`appsettings.json`, overridable via `Consul__*`/`ServiceRegistration__*` env vars):
+
+```json
+"Consul": { "Address": "http://localhost:8500" },
+"ServiceRegistration": {
+  "Name": "appointment-service",
+  "Id": "appointment-service-1",
+  "Address": "localhost",
+  "Port": 5138
+}
+```
+
+In Docker (`docker-compose.yml`), a `consul` container (`hashicorp/consul:1.21.5`, dev mode, UI on
+`http://localhost:8500`) is started, and `appointment-service`'s registration address/port point at
+its container name/port so other containers can reach it.
+
+**Not yet wired up:** `PetServiceClient`'s `HttpClient` still uses the static `PetService:BaseUrl`
+directly (unchanged from section 5) — `ServiceDiscoveryHandler` is *not* in its pipeline. That's
+deliberate: Pet Service doesn't register itself in Consul yet, so resolving `http://pet-service/`
+through Consul would just fail with "no healthy instances found" and break a currently-working
+integration. Once Pet Service adds its own `ConsulRegistrationHostedService` (or equivalent) and
+you want Appointment Service to discover it dynamically instead of reading a fixed URL from
+config, the change here is small:
+
+1. Change `PetService:BaseUrl` to a logical host ending in `-service`, e.g. `http://pet-service/`.
+2. Add `.AddHttpMessageHandler<ServiceDiscoveryHandler>()` to the
+   `AddHttpClient<IPetVerificationClient, PetServiceClient>(...)` chain in
+   `AppointmentService.Infrastructure/DependencyInjection.cs` (alongside the existing
+   `ServiceAccessTokenHandler` and resilience handler).
+
+Nothing in `PetServiceClient` itself needs to change — it only ever sees `HttpClient.BaseAddress`.
 
 ## Pet Service contract this service depends on
 
@@ -77,3 +169,26 @@ This endpoint doesn't exist on the Pet Service yet — it's listed under Pet Ser
 list (section 7, "cross-service integration work"). If the actual shape ends up different, only
 `PetServiceClient`'s private `PetExistsResponse` record and the two lines that map it to
 `PetVerificationResult` need to change — that's the whole point of the anti-corruption layer.
+
+### Testing without Pet Service: FakePetVerificationClient + demo IDs
+
+Pet Service also has no seeded pets/owners yet, so even once `/exists` exists there's nothing real
+to verify against locally. `AppointmentService.Infrastructure/Clients/FakePetVerificationClient.cs`
+stands in for `PetServiceClient` so the whole booking workflow is still testable end-to-end:
+
+- Controlled by `PetService:UseFakeVerification` — `true` in `appsettings.Development.json` (so
+  `dotnet run` / Swagger just works) **and** currently also `true` via `PetService__UseFakeVerification`
+  in `docker-compose.yml` for `appointment-service`, since Pet Service doesn't have a working
+  `/exists` endpoint in Docker either yet. `appsettings.json`'s own default is `false`. Remove the
+  `docker-compose.yml` override once Pet Service implements the real endpoint, so Docker goes back
+  to exercising the real integration.
+- Accepts any non-empty `petId`/`ownerId` as a valid, owned pet — it doesn't try to fake Pet
+  Service's actual data, just unblocks testing this service's own logic (slot reservation,
+  double-booking, Kafka events, etc.) independently of Pet Service's progress.
+- The demo `DemoPetId` (`44444444-4444-4444-4444-444444444444`) and `DemoOwnerId`
+  (`33333333-3333-3333-3333-333333333333`) from `AppointmentDbInitializer` are convenient to reuse
+  since `DemoOwnerId` already has one seeded appointment, so `GET /appointments/upcoming` has
+  something to show against the same owner right away — but any GUIDs work.
+- Once Pet Service has a real `/exists` endpoint and real seed data, set
+  `PetService:UseFakeVerification` to `false` (or delete the setting) to go back to the real
+  `PetServiceClient` — no other code changes needed.

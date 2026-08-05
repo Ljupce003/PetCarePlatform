@@ -1,6 +1,9 @@
 using AppointmentService.Application.Abstractions;
 using AppointmentService.Application.Dtos;
 using AppointmentService.Application.Exceptions;
+using Microsoft.Extensions.Logging;
+using Shared.AppointmentEvents;
+using Shared.Messaging;
 
 namespace AppointmentService.Application.Commands;
 
@@ -37,7 +40,9 @@ public static class CancelAppointmentValidator
 public sealed class CancelAppointmentHandler(
     IAppointmentRepository appointments,
     IAvailabilitySlotRepository slots,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IIntegrationEventPublisher eventPublisher,
+    ILogger<CancelAppointmentHandler> logger)
 {
     public async Task<AppointmentDto> HandleAsync(CancelAppointmentCommand command, CancellationToken cancellationToken)
     {
@@ -53,6 +58,26 @@ public sealed class CancelAppointmentHandler(
         slot.Release();
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await eventPublisher.PublishAsync(
+                PetCareTopics.Appointments,
+                new AppointmentCancelledEvent(
+                    Guid.NewGuid(),
+                    appointment.AppointmentId,
+                    appointment.PetId,
+                    appointment.OwnerId,
+                    DateTimeOffset.UtcNow,
+                    appointment.CancellationReason),
+                cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            logger.LogWarning(exception,
+                "Appointment {AppointmentId} was cancelled but publishing AppointmentCancelledEvent to Kafka failed.",
+                appointment.AppointmentId);
+        }
 
         return appointment.ToDto();
     }
