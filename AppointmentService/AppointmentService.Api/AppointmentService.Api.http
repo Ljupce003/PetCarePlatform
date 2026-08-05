@@ -10,3 +10,73 @@ GET {{AppointmentService_HostAddress}}/health/live
 GET {{AppointmentService_HostAddress}}/openapi/v1.json
 
 ### Swagger UI is served at {{AppointmentService_HostAddress}}/swagger
+
+
+### ===== Demo data (seeded automatically on first run, see AppointmentDbInitializer) =====
+# DemoClinicId          11111111-1111-1111-1111-111111111111
+# DemoSecondClinicId    11111111-1111-1111-1111-111111111112
+# DemoVeterinarianId       22222222-2222-2222-2222-222222222221  (Dr. Ana Petrova, General Practice, Central Vet Clinic)
+# DemoSecondVeterinarianId 22222222-2222-2222-2222-222222222222  (Dr. Marko Ivanov, Surgery, Central Vet Clinic)
+# DemoThirdVeterinarianId  22222222-2222-2222-2222-222222222223  (Dr. Elena Trajkova, Dermatology, North Animal Hospital)
+# DemoOwnerId           33333333-3333-3333-3333-333333333333  (already has one upcoming appointment)
+# DemoPetId             44444444-4444-4444-4444-444444444444
+
+
+### List all clinics
+GET {{AppointmentService_HostAddress}}/api/clinics
+
+### Search clinics by location
+GET {{AppointmentService_HostAddress}}/api/clinics?location=Skopje
+
+
+### List all veterinarians
+GET {{AppointmentService_HostAddress}}/api/veterinarians
+
+### Veterinarians at one clinic
+GET {{AppointmentService_HostAddress}}/api/veterinarians?clinicId=11111111-1111-1111-1111-111111111111
+
+### Veterinarians by specialization
+GET {{AppointmentService_HostAddress}}/api/veterinarians?specialization=Surgery
+
+
+### Open availability slots for a specific veterinarian (copy an AvailabilitySlotId from the
+### response — you'll need one to book below)
+GET {{AppointmentService_HostAddress}}/api/availability-slots?veterinarianId=22222222-2222-2222-2222-222222222221
+
+### Open availability slots on a specific date
+GET {{AppointmentService_HostAddress}}/api/availability-slots?date=2026-08-06
+
+
+### Upcoming appointments for the demo owner (should show the pre-seeded "Annual check-up")
+GET {{AppointmentService_HostAddress}}/api/appointments/upcoming?ownerId=33333333-3333-3333-3333-333333333333
+
+
+### Book an appointment — replace availabilitySlotId with one from the search above.
+### NOTE: real pet-ownership verification calls the Pet Service (PetService:BaseUrl in
+### appsettings.json). If Pet Service isn't running/reachable, this will fail with 404/500 — that's
+### expected until both services are up together.
+POST {{AppointmentService_HostAddress}}/api/appointments
+Content-Type: application/json
+
+{
+  "petId": "44444444-4444-4444-4444-444444444444",
+  "ownerId": "33333333-3333-3333-3333-333333333333",
+  "availabilitySlotId": "00000000-0000-0000-0000-000000000000",
+  "reason": "Routine vaccination"
+}
+
+### Cancel an appointment — replace {id} with an AppointmentId from a previous response.
+POST {{AppointmentService_HostAddress}}/api/appointments/00000000-0000-0000-0000-000000000000/cancel
+Content-Type: application/json
+
+{
+  "reason": "Owner requested cancellation"
+}
+
+### Reschedule an appointment onto a different open slot — replace both ids.
+POST {{AppointmentService_HostAddress}}/api/appointments/00000000-0000-0000-0000-000000000000/reschedule
+Content-Type: application/json
+
+{
+  "newAvailabilitySlotId": "00000000-0000-0000-0000-000000000000"
+}
