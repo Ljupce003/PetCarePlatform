@@ -49,16 +49,59 @@ What's already in place, waiting for it:
 
 ## Consul / service discovery
 
-Same situation: `PetService:BaseUrl` in `appsettings.json` is a plain config value
-(`http://localhost:5224` locally, `http://pet-service:8080` in Docker via the
-`PetService__BaseUrl` env var in `docker-compose.yml`). There's no Consul container and no
-Consul client package anywhere in this repo yet.
+Implemented in `Shared/ServiceDiscovery/ConsulIntegration.cs` (shared building block, not
+Appointment-Service-specific, so PetService/TreatmentAndNotificationService can reuse it the same
+way). Wired up in `AppointmentService.Infrastructure/DependencyInjection.cs` via
+`services.AddPetCareConsul(configuration)`.
 
-Once Consul infrastructure exists (task list section 6), the swap is small: resolve the base
-address through Consul's health API instead of reading it straight from config, before the
-`AddHttpClient<IPetVerificationClient, PetServiceClient>(...)` call in
-`AppointmentService.Infrastructure/DependencyInjection.cs`. `PetServiceClient` itself doesn't need
-to change at all — it only ever sees `HttpClient.BaseAddress`.
+What it does:
+
+- **Registers this instance in Consul on startup**, and deregisters it on shutdown
+  (`ConsulRegistrationHostedService`). The registration includes an HTTP health check pointed at
+  this service's own `/health` endpoint (`Interval: 10s`), so Consul automatically stops routing
+  to an instance that turns unhealthy — no extra health check code needed, it reuses the one
+  from section 1.
+- **Exposes `IConsulServiceResolver`** (`ResolveAsync`/`ResolveAllAsync`) so any client in this
+  service can ask Consul "who is currently healthy for service X" instead of hardcoding an
+  address.
+- **`ServiceDiscoveryHandler`** — a `DelegatingHandler` that, if added to an `HttpClient`'s
+  pipeline, rewrites requests aimed at a logical `http://<name>-service/...` host to whatever
+  Consul currently reports as the healthy address/port for `<name>-service`.
+- Registration failures (e.g. running `dotnet run` locally without Consul up) are logged as a
+  warning, not thrown — same "degrade gracefully" pattern used for the database and the Pet
+  Service client, so the service still starts.
+
+Configuration (`appsettings.json`, overridable via `Consul__*`/`ServiceRegistration__*` env vars):
+
+```json
+"Consul": { "Address": "http://localhost:8500" },
+"ServiceRegistration": {
+  "Name": "appointment-service",
+  "Id": "appointment-service-1",
+  "Address": "localhost",
+  "Port": 5138
+}
+```
+
+In Docker (`docker-compose.yml`), a `consul` container (`hashicorp/consul:1.21.5`, dev mode, UI on
+`http://localhost:8500`) is started, and `appointment-service`'s registration address/port point at
+its container name/port so other containers can reach it.
+
+**Not yet wired up:** `PetServiceClient`'s `HttpClient` still uses the static `PetService:BaseUrl`
+directly (unchanged from section 5) — `ServiceDiscoveryHandler` is *not* in its pipeline. That's
+deliberate: Pet Service doesn't register itself in Consul yet, so resolving `http://pet-service/`
+through Consul would just fail with "no healthy instances found" and break a currently-working
+integration. Once Pet Service adds its own `ConsulRegistrationHostedService` (or equivalent) and
+you want Appointment Service to discover it dynamically instead of reading a fixed URL from
+config, the change here is small:
+
+1. Change `PetService:BaseUrl` to a logical host ending in `-service`, e.g. `http://pet-service/`.
+2. Add `.AddHttpMessageHandler<ServiceDiscoveryHandler>()` to the
+   `AddHttpClient<IPetVerificationClient, PetServiceClient>(...)` chain in
+   `AppointmentService.Infrastructure/DependencyInjection.cs` (alongside the existing
+   `ServiceAccessTokenHandler` and resilience handler).
+
+Nothing in `PetServiceClient` itself needs to change — it only ever sees `HttpClient.BaseAddress`.
 
 ## Pet Service contract this service depends on
 

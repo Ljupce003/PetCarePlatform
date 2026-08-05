@@ -1,4 +1,16 @@
 services:
+  consul:
+    image: hashicorp/consul:1.21.5
+    container_name: petcare-consul
+    command: agent -dev -client=0.0.0.0 -ui
+    ports:
+      - "8500:8500"
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   pet-db:
     image: postgres:17-alpine
     container_name: petcare-pet-db
@@ -78,6 +90,11 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Database: "Host=appointment-db;Port=5432;Database=petcare_appointment;Username=postgres;Password=postgres"
       PetService__BaseUrl: "http://pet-service:8080"
+      Consul__Address: "http://consul:8500"
+      ServiceRegistration__Name: "appointment-service"
+      ServiceRegistration__Id: "appointment-service-1"
+      ServiceRegistration__Address: "appointment-service"
+      ServiceRegistration__Port: "8080"
     ports:
       - "5102:8080"
     depends_on:
@@ -85,6 +102,8 @@ services:
         condition: service_healthy
       pet-service:
         condition: service_started
+      consul:
+        condition: service_healthy
 
   treatment-and-notification-service:
     image: petcare/treatment-and-notification-service:latest

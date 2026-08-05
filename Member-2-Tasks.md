@@ -125,10 +125,10 @@ This is one of the most important parts of your work.
 ---
 
 ## 6. Service discovery and infrastructure integration
-- [ ] Register the Appointment Service in Consul.
-- [ ] Configure health checks for the service instance.
-- [ ] Ensure the service can resolve healthy instances at runtime.
-- [ ] Document the service discovery flow for the architecture section.
+- [x] Register the Appointment Service in Consul.
+- [x] Configure health checks for the service instance.
+- [x] Ensure the service can resolve healthy instances at runtime.
+- [x] Document the service discovery flow for the architecture section.
 
 ### Acceptance criteria
 - The service can be discovered by other components in the deployment environment.
