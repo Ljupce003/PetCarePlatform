@@ -6,6 +6,7 @@ using AppointmentService.Application.Abstractions;
 using AppointmentService.Infrastructure.Clients;
 using AppointmentService.Infrastructure.Persistence;
 using AppointmentService.Infrastructure.Security;
+using Shared.ServiceDiscovery;
 
 namespace AppointmentService.Infrastructure;
 
@@ -35,6 +36,10 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
         AddPetServiceClient(services, configuration);
+
+        // Registers this instance in Consul on startup (deregisters on shutdown) and exposes
+        // IConsulServiceResolver for looking up other services once they register too.
+        services.AddPetCareConsul(configuration);
 
         services.AddAppointmentServiceApplication();
         return services;

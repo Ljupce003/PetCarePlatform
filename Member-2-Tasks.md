@@ -110,13 +110,13 @@ Implement use cases for appointment workflow.
 ## 5. REST integration with Pet Service
 This is one of the most important parts of your work.
 
-- [ ] Create an `IPetVerificationClient` abstraction.
-- [ ] Implement an `HttpClient`-based client for the Pet Service.
-- [ ] Add an anti-corruption layer so the Appointment Service uses a simplified model.
-- [ ] Implement logic to verify pet ownership before booking.
-- [ ] Add retry policy for transient failures.
-- [ ] Use client-credentials authentication for service-to-service requests.
-- [ ] Resolve the Pet Service address dynamically through Consul.
+- [x] Create an `IPetVerificationClient` abstraction.
+- [x] Implement an `HttpClient`-based client for the Pet Service.
+- [x] Add an anti-corruption layer so the Appointment Service uses a simplified model.
+- [x] Implement logic to verify pet ownership before booking.
+- [x] Add retry policy for transient failures.
+- [x] Use client-credentials authentication for service-to-service requests.
+- [x] Resolve the Pet Service address dynamically through Consul.
 
 ### Acceptance criteria
 - Appointment booking depends on a verified pet ownership check.
