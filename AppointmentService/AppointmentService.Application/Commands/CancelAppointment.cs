@@ -1,6 +1,8 @@
 using AppointmentService.Application.Abstractions;
 using AppointmentService.Application.Dtos;
 using AppointmentService.Application.Exceptions;
+using Shared.AppointmentEvents;
+using Shared.Messaging;
 
 namespace AppointmentService.Application.Commands;
 
@@ -37,7 +39,8 @@ public static class CancelAppointmentValidator
 public sealed class CancelAppointmentHandler(
     IAppointmentRepository appointments,
     IAvailabilitySlotRepository slots,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IIntegrationEventPublisher eventPublisher)
 {
     public async Task<AppointmentDto> HandleAsync(CancelAppointmentCommand command, CancellationToken cancellationToken)
     {
@@ -53,6 +56,17 @@ public sealed class CancelAppointmentHandler(
         slot.Release();
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await eventPublisher.PublishAsync(
+            PetCareTopics.Appointments,
+            new AppointmentCancelledEvent(
+                Guid.NewGuid(),
+                appointment.AppointmentId,
+                appointment.PetId,
+                appointment.OwnerId,
+                DateTimeOffset.UtcNow,
+                appointment.CancellationReason),
+            cancellationToken);
 
         return appointment.ToDto();
     }

@@ -2,6 +2,8 @@ using AppointmentService.Application.Abstractions;
 using AppointmentService.Application.Dtos;
 using AppointmentService.Application.Exceptions;
 using AppointmentService.Domain.Entities;
+using Shared.AppointmentEvents;
+using Shared.Messaging;
 
 namespace AppointmentService.Application.Commands;
 
@@ -54,7 +56,8 @@ public sealed class ScheduleAppointmentHandler(
     IAvailabilitySlotRepository slots,
     IVeterinarianRepository veterinarians,
     IPetVerificationClient petVerification,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork,
+    IIntegrationEventPublisher eventPublisher)
 {
     public async Task<AppointmentDto> HandleAsync(ScheduleAppointmentCommand command, CancellationToken cancellationToken)
     {
@@ -97,6 +100,21 @@ public sealed class ScheduleAppointmentHandler(
 
         await appointments.AddAsync(appointment, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Published only after the commit above succeeds, so a failed booking never produces an
+        // event downstream services would have to compensate for.
+        await eventPublisher.PublishAsync(
+            PetCareTopics.Appointments,
+            new AppointmentScheduledEvent(
+                Guid.NewGuid(),
+                appointment.AppointmentId,
+                appointment.PetId,
+                appointment.OwnerId,
+                appointment.VeterinarianId,
+                appointment.StartsAtUtc,
+                appointment.EndsAtUtc,
+                appointment.Reason),
+            cancellationToken);
 
         return appointment.ToDto();
     }
