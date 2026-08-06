@@ -18,6 +18,11 @@
         <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.10"/>
         <!-- Serves the Swagger UI over the OpenAPI document produced by Microsoft.AspNetCore.OpenApi. -->
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6"/>
+        <!-- Required by dotnet-ef because this API project is the migration startup project. -->
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\AppointmentService.Domain\AppointmentService.Domain.csproj"/>
+        <!-- Event contracts (Shared.AppointmentEvents) and the IIntegrationEventPublisher
+             abstraction (Shared.Messaging) both live here so Application can raise integration
+             events without depending on Confluent.Kafka directly. -->
+        <ProjectReference Include="..\..\Shared\Shared.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- DI abstractions so this layer can expose its own registration method, and logging
+             abstractions so handlers can log a failed (non-fatal) event publish. -->
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10"/>
+    </ItemGroup>
+
+</Project>

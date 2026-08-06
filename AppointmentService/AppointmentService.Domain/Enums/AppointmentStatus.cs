@@ -1,6 +1,8 @@
-﻿namespace AppointmentService.AppointmentService.Domain.Enums;
+namespace AppointmentService.Domain.Enums;
 
-public class AppointmentStatus
+public enum AppointmentStatus
 {
-    
+    Scheduled = 1,
+    Completed = 2,
+    Cancelled = 3
 }

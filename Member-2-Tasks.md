@@ -37,30 +37,30 @@ Your work must cover business logic, service discovery, service-to-service commu
 You must model the appointment domain as a separate business context.
 
 ### Clinic entity
-- [ ] Create the `Clinic` entity.
-- [ ] Add relevant properties and validation.
+- [x] Create the `Clinic` entity.
+- [x] Add relevant properties and validation.
 
 ### Veterinarian entity
-- [ ] Create the `Veterinarian` entity.
-- [ ] Add specialization and availability information.
+- [x] Create the `Veterinarian` entity.
+- [x] Add specialization and availability information.
 
 ### AvailabilitySlot entity
-- [ ] Create the `AvailabilitySlot` entity.
-- [ ] Define rules for slot validity and conflicts.
-- [ ] Prevent double-booking and expired slots.
+- [x] Create the `AvailabilitySlot` entity.
+- [x] Define rules for slot validity and conflicts.
+- [x] Prevent double-booking and expired slots.
 
 ### Appointment entity
-- [ ] Create the `Appointment` entity.
-- [ ] Add fields for status, date, duration, clinic, veterinarian, and pet reference.
-- [ ] Implement state transitions such as Scheduled → Cancelled/Completed.
+- [x] Create the `Appointment` entity.
+- [x] Add fields for status, date, duration, clinic, veterinarian, and pet reference.
+- [x] Implement state transitions such as Scheduled → Cancelled/Completed.
 
 ### Business rules
-- [ ] Implement booking rules.
-- [ ] Implement conflict detection.
-- [ ] Prevent double booking.
-- [ ] Implement cancellation rules.
-- [ ] Implement reschedule rules.
-- [ ] Define allowed transitions for appointment states.
+- [x] Implement booking rules.
+- [x] Implement conflict detection.
+- [x] Prevent double booking.
+- [x] Implement cancellation rules.
+- [x] Implement reschedule rules.
+- [x] Define allowed transitions for appointment states.
 
 ### Acceptance criteria
 - The domain layer enforces appointment business rules without relying on the API layer.
@@ -71,21 +71,21 @@ You must model the appointment domain as a separate business context.
 Implement use cases for appointment workflow.
 
 ### Commands
-- [ ] Implement `ScheduleAppointment`
-- [ ] Implement `CancelAppointment`
-- [ ] Implement `RescheduleAppointment`
+- [x] Implement `ScheduleAppointment`
+- [x] Implement `CancelAppointment`
+- [x] Implement `RescheduleAppointment`
 
 ### Queries
-- [ ] Implement `SearchClinics`
-- [ ] Implement `SearchVeterinarians`
-- [ ] Implement `SearchAvailableSlots`
-- [ ] Implement `GetUpcomingAppointments`
+- [x] Implement `SearchClinics`
+- [x] Implement `SearchVeterinarians`
+- [x] Implement `SearchAvailableSlots`
+- [x] Implement `GetUpcomingAppointments`
 
 ### DTOs and validation
-- [ ] Create appointment-related DTOs.
-- [ ] Create clinic and veterinarian DTOs.
-- [ ] Add command and query validators.
-- [ ] Implement mapping between domain entities and DTOs.
+- [x] Create appointment-related DTOs.
+- [x] Create clinic and veterinarian DTOs.
+- [x] Add command and query validators.
+- [x] Implement mapping between domain entities and DTOs.
 
 ### Acceptance criteria
 - Appointment operations are exposed through well-defined application services.
@@ -94,12 +94,12 @@ Implement use cases for appointment workflow.
 ---
 
 ## 4. Infrastructure layer
-- [ ] Create the EF Core `DbContext`.
-- [ ] Configure entity mappings for clinics, veterinarians, slots, and appointments.
-- [ ] Implement repository interfaces and concrete repositories.
-- [ ] Add migrations.
-- [ ] Seed clinics, veterinarians, and availability slots for demo data.
-- [ ] Ensure the service uses its own PostgreSQL database.
+- [x] Create the EF Core `DbContext`.
+- [x] Configure entity mappings for clinics, veterinarians, slots, and appointments.
+- [x] Implement repository interfaces and concrete repositories.
+- [x] Add migrations.
+- [x] Seed clinics, veterinarians, and availability slots for demo data.
+- [x] Ensure the service uses its own PostgreSQL database.
 
 ### Acceptance criteria
 - Appointment data is isolated in the Appointment Service database.
@@ -110,13 +110,13 @@ Implement use cases for appointment workflow.
 ## 5. REST integration with Pet Service
 This is one of the most important parts of your work.
 
-- [ ] Create an `IPetVerificationClient` abstraction.
-- [ ] Implement an `HttpClient`-based client for the Pet Service.
-- [ ] Add an anti-corruption layer so the Appointment Service uses a simplified model.
-- [ ] Implement logic to verify pet ownership before booking.
-- [ ] Add retry policy for transient failures.
-- [ ] Use client-credentials authentication for service-to-service requests.
-- [ ] Resolve the Pet Service address dynamically through Consul.
+- [x] Create an `IPetVerificationClient` abstraction.
+- [x] Implement an `HttpClient`-based client for the Pet Service.
+- [x] Add an anti-corruption layer so the Appointment Service uses a simplified model.
+- [x] Implement logic to verify pet ownership before booking.
+- [x] Add retry policy for transient failures.
+- [x] Use client-credentials authentication for service-to-service requests.
+- [x] Resolve the Pet Service address dynamically through Consul.
 
 ### Acceptance criteria
 - Appointment booking depends on a verified pet ownership check.
@@ -125,10 +125,10 @@ This is one of the most important parts of your work.
 ---
 
 ## 6. Service discovery and infrastructure integration
-- [ ] Register the Appointment Service in Consul.
-- [ ] Configure health checks for the service instance.
-- [ ] Ensure the service can resolve healthy instances at runtime.
-- [ ] Document the service discovery flow for the architecture section.
+- [x] Register the Appointment Service in Consul.
+- [x] Configure health checks for the service instance.
+- [x] Ensure the service can resolve healthy instances at runtime.
+- [x] Document the service discovery flow for the architecture section.
 
 ### Acceptance criteria
 - The service can be discovered by other components in the deployment environment.
@@ -139,11 +139,11 @@ This is one of the most important parts of your work.
 Publish appointment lifecycle events for downstream processing.
 
 ### Producers
-- [ ] Implement `AppointmentScheduled` event publishing.
-- [ ] Implement `AppointmentCancelled` event publishing.
-- [ ] Implement `AppointmentRescheduled` event publishing.
-- [ ] Use an event envelope with event type, payload, timestamp, and correlation ID.
-- [ ] Ensure the event publisher is reliable and idempotent where possible.
+- [x] Implement `AppointmentScheduled` event publishing.
+- [x] Implement `AppointmentCancelled` event publishing.
+- [x] Implement `AppointmentRescheduled` event publishing.
+- [x] Use an event envelope with event type, payload, timestamp, and correlation ID.
+- [x] Ensure the event publisher is reliable and idempotent where possible.
 
 ### Acceptance criteria
 - Treatment & Notification Service can consume the appointment events successfully.
@@ -154,13 +154,13 @@ Publish appointment lifecycle events for downstream processing.
 ## 8. REST API layer
 Expose appointment functionality through REST endpoints.
 
-- [ ] `GET /clinics`
-- [ ] `GET /veterinarians`
-- [ ] `GET /slots`
-- [ ] `POST /appointments`
-- [ ] `DELETE /appointments/{id}`
-- [ ] `PUT /appointments/{id}/reschedule`
-- [ ] `GET /health`
+- [x] `GET /clinics`
+- [x] `GET /veterinarians`
+- [x] `GET /slots`
+- [x] `POST /appointments`
+- [x] `DELETE /appointments/{id}`
+- [x] `PUT /appointments/{id}/reschedule`
+- [x] `GET /health`
 
 ### Acceptance criteria
 - The API supports the complete appointment workflow.
@@ -169,13 +169,13 @@ Expose appointment functionality through REST endpoints.
 ---
 
 ## 9. Security and authorization
-- [ ] Implement JWT authentication.
-- [ ] Add role-based authorization for:
-  - [ ] `owner`
-  - [ ] `veterinarian`
-  - [ ] `admin`
-- [ ] Protect booking and rescheduling actions appropriately.
-- [ ] Ensure service-to-service calls authenticate correctly.
+- [x] Implement JWT authentication.
+- [x] Add role-based authorization for:
+  - [x] `owner`
+  - [x] `veterinarian`  
+  - [x] `admin` 
+- [x] Protect booking and rescheduling actions appropriately.
+- [x] Ensure service-to-service calls authenticate correctly.
 
 ### Acceptance criteria
 - Unauthorized users cannot manipulate appointments.
