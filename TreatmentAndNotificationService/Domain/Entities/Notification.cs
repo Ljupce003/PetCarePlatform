@@ -1,3 +1,4 @@
+using TreatmentAndNotificationService.Application.Models;
 using TreatmentAndNotificationService.Domain.Enums;
 
 namespace TreatmentAndNotificationService.Domain.Entities;
@@ -43,4 +44,7 @@ public class Notification
     }
 
     public void MarkFailed() => Status = NotificationStatus.Failed;
+    
+    public static NotificationDto ToDto(Notification item) => new NotificationDto(item.Id, item.OwnerId, item.PetId,
+        item.Type, item.Title, item.Message, item.ScheduledForUtc, item.Status, item.CreatedAtUtc, item.SentAtUtc);
 }
