@@ -26,7 +26,16 @@ public static class AppointmentDbInitializer
         // Applies the InitialCreate migration (and any later ones) instead of EnsureCreated,
         // so the schema on disk always matches what's under Migrations/.
         await dbContext.Database.MigrateAsync(cancellationToken);
+        await SeedIfEmptyAsync(dbContext, cancellationToken);
+    }
 
+    /// <summary>
+    /// The seeding half of <see cref="InitializeAsync"/>, split out so integration tests can call
+    /// it directly against an EF Core InMemory database created with <c>EnsureCreated</c> --
+    /// <c>MigrateAsync</c> above isn't supported by the InMemory provider.
+    /// </summary>
+    public static async Task SeedIfEmptyAsync(AppointmentDbContext dbContext, CancellationToken cancellationToken = default)
+    {
         if (await dbContext.Clinics.AnyAsync(cancellationToken))
         {
             return;
