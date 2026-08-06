@@ -197,11 +197,11 @@ You own the appointment-related tools in the shared MCP server.
 ---
 
 ## 11. Testing
-- [ ] Write unit tests for appointment domain logic.
-- [ ] Write integration tests for REST endpoints.
-- [ ] Write consumer-side Pact tests for the Pet Service contract.
-- [ ] Add health endpoint tests.
-- [ ] Validate message production behavior where possible.
+- [x] Write unit tests for appointment domain logic.
+- [x] Write integration tests for REST endpoints.
+- [x] Write consumer-side Pact tests for the Pet Service contract.
+- [x] Add health endpoint tests.
+- [x] Validate message production behavior where possible.
 
 ### Acceptance criteria
 - The appointment workflow is covered by automated tests.
