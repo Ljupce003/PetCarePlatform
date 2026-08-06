@@ -6,6 +6,12 @@
     <Project Path="AppointmentService/AppointmentService.Infrastructure/AppointmentService.Infrastructure.csproj" />
     <Project Path="AppointmentService/AppointmentService.Api/AppointmentService.Api.csproj" />
   </Folder>
+  <Folder Name="/AppointmentService/Tests/">
+    <Project Path="AppointmentService/AppointmentService.Domain.Tests/AppointmentService.Domain.Tests.csproj" />
+    <Project Path="AppointmentService/AppointmentService.Application.Tests/AppointmentService.Application.Tests.csproj" />
+    <Project Path="AppointmentService/AppointmentService.Api.IntegrationTests/AppointmentService.Api.IntegrationTests.csproj" />
+    <Project Path="tests/AppointmentService.PactTests/AppointmentService.PactTests.csproj" />
+  </Folder>
   <Folder Name="/PetService/">
     <Project Path="PetService/PetService.Domain/PetService.Domain.csproj" />
     <Project Path="PetService/PetService.Application/PetService.Application.csproj" />

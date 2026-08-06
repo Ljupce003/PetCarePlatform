@@ -173,3 +173,8 @@ static Task WriteHealthResponseAsync(HttpContext context, HealthReport report)
         })
     });
 }
+
+// Top-level statements make Program an internal, compiler-generated class. WebApplicationFactory
+// <Program> (used by AppointmentService.Api.IntegrationTests) needs it visible from outside this
+// assembly, hence this explicit, otherwise-unused partial declaration.
+public partial class Program;
