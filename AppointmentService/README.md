@@ -3,6 +3,47 @@
 Notes on the integration points that are deliberately left as scaffolding for now, so whoever
 wires up the real infrastructure (or future you) doesn't have to reverse-engineer the plan.
 
+## Testing
+
+Four test projects, run with `dotnet test PetCarePlatform.slnx`:
+
+| Project | Covers |
+|---|---|
+| `AppointmentService.Domain.Tests` | `Appointment`/`AvailabilitySlot` status-transition and booking rules, `Clinic`/`Veterinarian` construction guards. Pure unit tests, no dependencies beyond Domain. |
+| `AppointmentService.Application.Tests` | Every command/query handler, with `IAppointmentRepository`/`IAvailabilitySlotRepository`/etc., `IPetVerificationClient`, and `IIntegrationEventPublisher` mocked (Moq). Covers the happy path, validation failures, domain exceptions (already-booked/expired slot, invalid status transition), and that a **failed Kafka publish doesn't fail an otherwise-successful booking/cancel/reschedule** — see `ScheduleAppointmentHandlerTests.HandleAsync_WhenEventPublishFails_StillReturnsTheBookedAppointment`. |
+| `AppointmentService.Api.IntegrationTests` | Boots the real API (`WebApplicationFactory<Program>`) — real controllers, real `[Authorize]`/role checks, real JWT login/validation, real domain rules — against an EF Core **InMemory** database and an in-memory `FakeIntegrationEventPublisher` instead of Postgres/Kafka, so the whole suite runs without Docker. Covers `/health`, `/auth/login` + `/auth/token`, 401/403 authorization checks, and a full schedule → reschedule → cancel lifecycle asserting both the HTTP responses **and** that each step published the right event (`AppointmentScheduledEvent`/`AppointmentRescheduledEvent`/`AppointmentCancelledEvent`) to `petcare.appointments`. |
+| `tests/AppointmentService.PactTests` | Consumer-side Pact tests (PactNet v4) for the `GET /api/pets/{petId}/exists?ownerId={ownerId}` contract `PetServiceClient` depends on — exists/owned, exists/not-owned, and not-found. Regenerates `/pacts/Appointment Service-Pet Service.json` on every run, which is what Pet Service's own (not-yet-written) provider-verification tests would check against. |
+
+Notes on choices that might look surprising:
+
+- **InMemory instead of Testcontainers/a real Postgres for integration tests.** Faster, no Docker
+  requirement for CI, and this project doesn't lean on Postgres-specific behavior (no raw SQL,
+  no database-level constraints the tests need to exercise) — the unique index on
+  `(VeterinarianId, StartsAtUtc)` is redundant with `AvailabilitySlot.Reserve()`'s own
+  double-booking guard, which the Application tests already cover directly. If that stops being
+  true later, swap `UseInMemoryDatabase` for a Testcontainers-backed Postgres in
+  `AppointmentServiceApiFactory`.
+- **`AppointmentDbInitializer.InitializeAsync`'s `Database.MigrateAsync()` doesn't run in tests**
+  (the InMemory provider doesn't support it, and — separately — ASP.NET Core's test host factory
+  intercepts `Program.cs` right after `Build()`, so the inline seeding block between `Build()` and
+  `RunAsync()` never executes under `WebApplicationFactory` regardless). `AppointmentServiceApiFactory`
+  registers its own `TestDataSeeder : IHostedService` that calls `Database.EnsureCreatedAsync()` +
+  the newly-extracted `AppointmentDbInitializer.SeedIfEmptyAsync(...)` instead.
+- **Integration tests log in for real** (`POST /auth/login` against the running test instance)
+  rather than faking authentication — a direct payoff of section 9's JWTs being locally self-
+  issued and self-validated: no test-only auth handler needed.
+- **`AppointmentWorkflowTests` gives every test its own fresh factory/database** (`IAsyncLifetime`,
+  not `IClassFixture`) since those tests book/reschedule/cancel real slots and would otherwise
+  collide with each other; the read-only test classes (`HealthEndpointTests`, `AuthTests`,
+  `AuthorizationTests`) share one factory via `IClassFixture` since they never mutate state.
+- **`System.Net.Http.Json`'s `ReadFromJsonAsync`/`GetFromJsonAsync` default to case-*sensitive*
+  property matching**, but the API serializes camelCase (ASP.NET Core MVC's default) into PascalCase
+  C# DTOs — every read in the integration tests passes `JsonDefaults.CaseInsensitive` explicitly to
+  avoid silently deserializing everything to default values instead of failing loudly.
+
+Once test projects exist, the GitHub Actions workflow's commented-out `dotnet test` step can be
+uncommented.
+
 ## Security and authorization
 
 Keycloak doesn't exist in this repo yet (Member 1's shared-infrastructure task), so this service
