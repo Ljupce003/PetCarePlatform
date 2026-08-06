@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TreatmentAndNotificationService.Domain.Entities;
+using TreatmentAndNotificationService.Domain.Repositories;
 
 namespace TreatmentAndNotificationService.Infrastructure.Persistence.RepoImpl;
 
@@ -13,12 +14,12 @@ public class VaccinationRepository: IVaccinationRepository
         _context = context;
     }
 
-    public Task AddVaccination(Vaccination vaccination, CancellationToken cancellationToken)
+    public Task AddAsync(Vaccination vaccination, CancellationToken cancellationToken)
     {
         return _context.Vaccinations.AddAsync(vaccination, cancellationToken).AsTask();
     }
 
-    public async Task<List<Vaccination>> GetByPetId(Guid petId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Vaccination>> GetByPetIdAsync(Guid petId, CancellationToken cancellationToken)
     {
         return await _context.Vaccinations
             .AsNoTracking()
@@ -27,13 +28,11 @@ public class VaccinationRepository: IVaccinationRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<Vaccination?> GetNextVaccinationForPet(Guid petId, CancellationToken cancellationToken)
+    public async Task<Vaccination?> GetNextForPetAsync(Guid petId, DateOnly onOrAfter, CancellationToken cancellationToken)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-
         return await _context.Vaccinations
             .AsNoTracking()
-            .Where(vac => vac.PetId == petId && vac.NextDueOn.HasValue && vac.NextDueOn.Value >= today)
+            .Where(vac => vac.PetId == petId && vac.NextDueOn.HasValue && vac.NextDueOn.Value >= onOrAfter)
             .OrderBy(vac => vac.NextDueOn)
             .FirstOrDefaultAsync(cancellationToken);
     }

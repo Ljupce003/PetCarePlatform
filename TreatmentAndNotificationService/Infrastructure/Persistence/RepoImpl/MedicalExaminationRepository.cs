@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TreatmentAndNotificationService.Domain.Entities;
+using TreatmentAndNotificationService.Domain.Repositories;
 
 namespace TreatmentAndNotificationService.Infrastructure.Persistence.RepoImpl;
 
@@ -13,14 +14,14 @@ public class MedicalExaminationRepository : IMedicalExaminationRepository
         _context = context;
     }
 
-    public Task AddExamination(MedicalExamination examination, CancellationToken cancellationToken)
+    public Task AddAsync(MedicalExamination examination, CancellationToken cancellationToken)
     {
         return _context.MedicalExaminations
             .AddAsync(examination, cancellationToken)
             .AsTask();
     }
 
-    public async Task<List<MedicalExamination>> GetByPetId(Guid petId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<MedicalExamination>> GetByPetIdAsync(Guid petId, CancellationToken cancellationToken)
     {
         return await _context.MedicalExaminations
             .AsNoTracking()

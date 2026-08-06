@@ -8,6 +8,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["TreatmentAndNotificationService/TreatmentAndNotificationService.csproj", "TreatmentAndNotificationService/"]
+COPY ["Shared/Shared.csproj", "Shared/"]
 RUN dotnet restore "TreatmentAndNotificationService/TreatmentAndNotificationService.csproj"
 COPY . .
 WORKDIR "/src/TreatmentAndNotificationService"
