@@ -20,12 +20,30 @@ public class NotificationsController : ControllerBase
         _notifications = notifications;
     }
 
+    /// <summary>Gets all notifications created for an owner, newest notification first.</summary>
+    /// <param name="ownerId">The owner whose notifications should be returned.</param>
+    /// <param name="ct">Request-abort cancellation token.</param>
+    /// <returns>The owner's notification history; an owner without notifications receives an empty list.</returns>
+    /// <response code="200">The notification-history query completed successfully.</response>
+    /// <response code="404">The route does not contain a valid GUID owner identifier.</response>
     [HttpGet("owner/{ownerId:guid}")]
-    public Task<IReadOnlyList<NotificationDto>> GetByOwner(Guid ownerId, CancellationToken ct) =>
+    [ProducesResponseType(typeof(IReadOnlyList<NotificationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public Task<IReadOnlyList<NotificationDto>> GetByOwner([FromRoute] Guid ownerId, CancellationToken ct) =>
         _notifications.HandleAsync(new GetOwnerNotificationsQuery(ownerId), ct);
 
+    /// <summary>Creates a pending notification from a source event identifier.</summary>
+    /// <param name="command">Owner, pet, notification type/content, schedule, and unique source event identifier.</param>
+    /// <param name="ct">Request-abort cancellation token.</param>
+    /// <returns>The newly created pending notification.</returns>
+    /// <response code="201">The notification was created.</response>
+    /// <response code="400">The notification content, schedule, identifiers, or source event identifier is invalid.</response>
+    /// <response code="409">A notification with the same source event identifier already exists.</response>
     [HttpPost]
-    public async Task<ActionResult<NotificationDto>> Create(CreateNotificationCommand command, CancellationToken ct)
+    [ProducesResponseType(typeof(NotificationDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<NotificationDto>> Create([FromBody] CreateNotificationCommand command, CancellationToken ct)
     {
         var result = await _createNotification.HandleAsync(command, ct);
         return Created($"/api/notifications/{result.Id}", result);

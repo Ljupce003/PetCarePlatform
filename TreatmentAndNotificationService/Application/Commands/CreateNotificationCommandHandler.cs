@@ -2,6 +2,7 @@ using TreatmentAndNotificationService.Application.Abstractions;
 using TreatmentAndNotificationService.Application.Mappings;
 using TreatmentAndNotificationService.Application.Models;
 using TreatmentAndNotificationService.Domain.Entities;
+using TreatmentAndNotificationService.Domain.Common;
 using TreatmentAndNotificationService.Domain.Repositories;
 using TreatmentAndNotificationService.Domain.ValueObjects;
 
@@ -13,7 +14,7 @@ public sealed class CreateNotificationCommandHandler(INotificationRepository not
     public async Task<NotificationDto> HandleAsync(CreateNotificationCommand command, CancellationToken cancellationToken)
     {
         if (await notifications.ExistsBySourceEventIdAsync(command.SourceEventId ?? string.Empty, cancellationToken))
-            throw new InvalidOperationException("A notification for this source event already exists.");
+            throw new DuplicateSourceEventException(command.SourceEventId!);
 
         var notification = new Notification(command.OwnerId, command.PetId, command.Type,
             NotificationContent.Create(command.Title, command.Message), command.ScheduledForUtc,

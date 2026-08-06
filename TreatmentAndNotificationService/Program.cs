@@ -31,7 +31,11 @@ builder.Services.AddSingleton<INotificationSender, ConsoleNotificationSender>();
 builder.Services.AddHostedService<NotificationDeliveryWorker>();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    var xmlFile = $"{typeof(Program).Assembly.GetName().Name}.xml";
+    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFile));
+});
 builder.Services.AddSwaggerGenNewtonsoftSupport();
 
 var app = builder.Build();
@@ -52,3 +56,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 await app.RunAsync();
+
+// Makes the top-level Program type accessible to WebApplicationFactory integration tests.
+public partial class Program;
