@@ -12,6 +12,10 @@
     <Project Path="AppointmentService/AppointmentService.Api.IntegrationTests/AppointmentService.Api.IntegrationTests.csproj" />
     <Project Path="tests/AppointmentService.PactTests/AppointmentService.PactTests.csproj" />
   </Folder>
+  <Folder Name="/TreatmentAndNotificationService/Tests/">
+    <Project Path="tests/TreatmentAndNotificationService.PactTests/TreatmentAndNotificationService.PactTests.csproj" />
+    <Project Path="tests/TreatmentAndNotificationService.Api.IntegrationTests/TreatmentAndNotificationService.Api.IntegrationTests.csproj" />
+  </Folder>
   <Folder Name="/PetService/">
     <Project Path="PetService/PetService.Domain/PetService.Domain.csproj" />
     <Project Path="PetService/PetService.Application/PetService.Application.csproj" />
