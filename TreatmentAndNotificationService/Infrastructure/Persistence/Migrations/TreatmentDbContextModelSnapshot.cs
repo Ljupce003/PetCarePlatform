@@ -84,6 +84,10 @@ namespace TreatmentAndNotificationService.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasMaxLength(1000)
