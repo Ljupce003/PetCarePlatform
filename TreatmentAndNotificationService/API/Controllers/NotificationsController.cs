@@ -1,26 +1,33 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TreatmentAndNotificationService.Application.Abstractions;
+using TreatmentAndNotificationService.Application.Commands;
 using TreatmentAndNotificationService.Application.Models;
-using TreatmentAndNotificationService.Application.Services;
+using TreatmentAndNotificationService.Application.Queries;
 
 namespace TreatmentAndNotificationService.API.Controllers;
 
 [ApiController]
 [Route("api/notifications")]
-// [Authorize]
-public class NotificationsController
+public class NotificationsController : ControllerBase
 {
-    private readonly ITreatmentApplicationService _service;
+    private readonly ICommandHandler<CreateNotificationCommand, NotificationDto> _createNotification;
+    private readonly IQueryHandler<GetOwnerNotificationsQuery, IReadOnlyList<NotificationDto>> _notifications;
 
     // ReSharper disable once ConvertToPrimaryConstructor
-    public NotificationsController(ITreatmentApplicationService service)
+    public NotificationsController(ICommandHandler<CreateNotificationCommand, NotificationDto> createNotification, IQueryHandler<GetOwnerNotificationsQuery, IReadOnlyList<NotificationDto>> notifications)
     {
-        _service = service;
+        _createNotification = createNotification;
+        _notifications = notifications;
     }
 
     [HttpGet("owner/{ownerId:guid}")]
-    public Task<List<NotificationDto>> GetByOwner(Guid ownerId, CancellationToken ct)
+    public Task<IReadOnlyList<NotificationDto>> GetByOwner(Guid ownerId, CancellationToken ct) =>
+        _notifications.HandleAsync(new GetOwnerNotificationsQuery(ownerId), ct);
+
+    [HttpPost]
+    public async Task<ActionResult<NotificationDto>> Create(CreateNotificationCommand command, CancellationToken ct)
     {
-        return _service.GetNotificationsAsync(ownerId, ct);
+        var result = await _createNotification.HandleAsync(command, ct);
+        return Created($"/api/notifications/{result.Id}", result);
     }
 }
