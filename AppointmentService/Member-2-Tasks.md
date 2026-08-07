@@ -186,10 +186,10 @@ Expose appointment functionality through REST endpoints.
 ## 10. MCP contribution
 You own the appointment-related tools in the shared MCP server.
 
-- [ ] Define the MCP contract for appointment tools.
-- [ ] Implement `FindAvailableVeterinarians`.
-- [ ] Implement `GetUpcomingAppointments`.
-- [ ] Test the MCP tool responses.
+- [x] Define the MCP contract for appointment tools.
+- [x] Implement `FindAvailableVeterinarians`.
+- [x] Implement `GetUpcomingAppointments`.
+- [x] Test the MCP tool responses.
 
 ### Acceptance criteria
 - The MCP server exposes appointment information through the registered tools.
@@ -197,11 +197,11 @@ You own the appointment-related tools in the shared MCP server.
 ---
 
 ## 11. Testing
-- [ ] Write unit tests for appointment domain logic.
-- [ ] Write integration tests for REST endpoints.
-- [ ] Write consumer-side Pact tests for the Pet Service contract.
-- [ ] Add health endpoint tests.
-- [ ] Validate message production behavior where possible.
+- [x] Write unit tests for appointment domain logic.
+- [x] Write integration tests for REST endpoints.
+- [x] Write consumer-side Pact tests for the Pet Service contract.
+- [x] Add health endpoint tests.
+- [x] Validate message production behavior where possible.
 
 ### Acceptance criteria
 - The appointment workflow is covered by automated tests.

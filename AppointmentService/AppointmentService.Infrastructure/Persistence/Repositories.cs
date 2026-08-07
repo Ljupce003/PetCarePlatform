@@ -84,6 +84,9 @@ public sealed class AvailabilitySlotRepository(AppointmentDbContext dbContext) :
                 row.slot.EndsAtUtc))
             .ToList();
     }
+
+    public async Task AddAsync(AvailabilitySlot slot, CancellationToken cancellationToken) =>
+        await dbContext.AvailabilitySlots.AddAsync(slot, cancellationToken);
 }
 
 public sealed class AppointmentRepository(AppointmentDbContext dbContext) : IAppointmentRepository
