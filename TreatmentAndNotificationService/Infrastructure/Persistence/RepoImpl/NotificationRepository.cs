@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using TreatmentAndNotificationService.Domain.Entities;
 using TreatmentAndNotificationService.Domain.Enums;
+using TreatmentAndNotificationService.Domain.Repositories;
+using TreatmentAndNotificationService.Domain.ValueObjects;
 
 namespace TreatmentAndNotificationService.Infrastructure.Persistence.RepoImpl;
 
@@ -14,31 +16,32 @@ public class NotificationRepository : INotificationRepository
         _context = context;
     }
 
-    public Task AddNotification(Notification notification, CancellationToken cancellationToken)
+    public Task AddAsync(Notification notification, CancellationToken cancellationToken)
     {
         return _context.Notifications.AddAsync(notification, cancellationToken).AsTask();
     }
 
-    public Task<bool> SourceExists(string sourceEventId, CancellationToken cancellationToken)
+    public Task<bool> ExistsBySourceEventIdAsync(string sourceEventId, CancellationToken cancellationToken)
     {
-        return _context.Notifications.AnyAsync(item => item.SourceEventId == sourceEventId, cancellationToken);
+        var source = SourceEventId.Create(sourceEventId);
+        return _context.Notifications.AnyAsync(item => item.SourceEventId == source, cancellationToken);
     }
 
-    public Task<List<Notification>> GetByOwnerId(Guid ownerId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Notification>> GetByOwnerIdAsync(Guid ownerId, CancellationToken cancellationToken)
     {
-        return _context.Notifications
+        return await _context.Notifications
             .AsNoTracking()
             .Where(item => item.OwnerId == ownerId)
             .OrderByDescending(item => item.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
 
-    public Task<List<Notification>> GetDuePending(DateTimeOffset nowUtc, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<Notification>> GetDuePendingAsync(DateTimeOffset nowUtc, int take, CancellationToken cancellationToken)
     {
-        return _context.Notifications
+        return await _context.Notifications
             .Where(item => item.Status == NotificationStatus.Pending && item.ScheduledForUtc <= nowUtc)
             .OrderBy(item => item.ScheduledForUtc)
-            .Take(100)
+            .Take(take)
             .ToListAsync(cancellationToken);
     }
 }

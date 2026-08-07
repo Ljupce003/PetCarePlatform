@@ -1,69 +1,54 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Converters;
+using TreatmentAndNotificationService.API.ExceptionHandling;
+using TreatmentAndNotificationService.Application;
 using TreatmentAndNotificationService.Application.Services;
 using TreatmentAndNotificationService.Application.Services.Impl;
+using TreatmentAndNotificationService.Domain.Repositories;
+using TreatmentAndNotificationService.Infrastructure.Notifications;
 using TreatmentAndNotificationService.Infrastructure.Persistence;
 using TreatmentAndNotificationService.Infrastructure.Persistence.RepoImpl;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-
-builder.Services.AddControllers()
-    .AddNewtonsoftJson(options =>
-    {
-        options.SerializerSettings.Converters.Add(new StringEnumConverter());
-    });
-
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+    options.SerializerSettings.Converters.Add(new StringEnumConverter()));
 builder.Services.AddHealthChecks();
 
-builder.Services.AddDbContext<TreatmentDbContext>(options =>
-{
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
+var connectionString = builder.Configuration.GetConnectionString("Database")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("A treatment database connection string is required.");
+builder.Services.AddDbContext<TreatmentDbContext>(options => options.UseNpgsql(connectionString));
 
-//Repos
 builder.Services.AddScoped<IMedicalExaminationRepository, MedicalExaminationRepository>();
 builder.Services.AddScoped<IVaccinationRepository, VaccinationRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-
-//Services
-builder.Services.AddScoped<ITreatmentApplicationService, TreatmentApplicationService>();
+builder.Services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<TreatmentDbContext>());
 builder.Services.AddScoped<IAppointmentNotificationApplicationService, AppointmentNotificationApplicationService>();
-
+builder.Services.AddTreatmentApplication();
+builder.Services.AddSingleton<INotificationSender, ConsoleNotificationSender>();
+builder.Services.AddHostedService<NotificationDeliveryWorker>();
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-
-    var xmlFile = $"{typeof(Program).Assembly.GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    c.IncludeXmlComments(xmlPath);
-});
+builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerGenNewtonsoftSupport();
 
 var app = builder.Build();
-
-// // Configure the HTTP request pipeline.
-// if (app.Environment.IsDevelopment())
-// {
-//     app.MapOpenApi();
-// }
-
-
+app.UseMiddleware<DomainExceptionMiddleware>();
+app.MapOpenApi();
 app.UseSwagger();
 app.UseSwaggerUI();
-
 app.UseHttpsRedirection();
-app.UseRouting();
-// app.UseExceptionHandler();
-// app.UseAuthentication();
-// app.UseAuthorization();
-// app.MapOpenApi();
 app.MapHealthChecks("/health");
 app.MapControllers();
 
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<TreatmentDbContext>();
+    await context.Database.MigrateAsync();
+    if (app.Environment.IsDevelopment())
+        await TreatmentDbContextSeeder.SeedAsync(context);
+}
 
-app.Run();
+await app.RunAsync();

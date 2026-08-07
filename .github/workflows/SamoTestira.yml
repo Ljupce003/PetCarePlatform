@@ -25,4 +25,8 @@ jobs:
       - name: Build
         run: dotnet build PetCarePlatform.slnx --configuration Release --no-restore
 
+      - name: Test Appointment Service
+        run: dotnet test AppointmentService/AppointmentService.Domain.Tests
+        
+
     

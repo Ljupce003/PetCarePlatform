@@ -1,42 +1,43 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TreatmentAndNotificationService.Application.Abstractions;
+using TreatmentAndNotificationService.Application.Commands;
 using TreatmentAndNotificationService.Application.Models;
-using TreatmentAndNotificationService.Application.Services;
+using TreatmentAndNotificationService.Application.Queries;
 
 namespace TreatmentAndNotificationService.API.Controllers;
 
 [ApiController]
 [Route("api/vaccinations")]
-[Authorize]
-public class VaccinationsController : ControllerBase
+public sealed class VaccinationsController: ControllerBase
 {
-    private readonly ITreatmentApplicationService _service;
+    private readonly ICommandHandler<RecordVaccinationCommand, VaccinationDto> _recordVaccination;
+    private readonly IQueryHandler<GetVaccinationHistoryQuery, IReadOnlyList<VaccinationDto>> _history;
+    private readonly IQueryHandler<GetNextVaccinationQuery, VaccinationDto?> _nextVaccination;
 
     // ReSharper disable once ConvertToPrimaryConstructor
-    public VaccinationsController(ITreatmentApplicationService service)
+    public VaccinationsController(ICommandHandler<RecordVaccinationCommand, VaccinationDto> recordVaccination, IQueryHandler<GetVaccinationHistoryQuery, IReadOnlyList<VaccinationDto>> history, IQueryHandler<GetNextVaccinationQuery, VaccinationDto?> nextVaccination)
     {
-        _service = service;
+        _recordVaccination = recordVaccination;
+        _history = history;
+        _nextVaccination = nextVaccination;
     }
 
     [HttpGet("pet/{petId:guid}")]
-    public Task<List<VaccinationDto>> GetByPet(Guid petId, CancellationToken ct)
-    {
-        return _service.GetVaccinationsAsync(petId, ct);
-    }
+    public Task<IReadOnlyList<VaccinationDto>> GetByPet(Guid petId, CancellationToken ct) =>
+        _history.HandleAsync(new GetVaccinationHistoryQuery(petId), ct);
 
     [HttpGet("pet/{petId:guid}/next")]
     public async Task<ActionResult<VaccinationDto>> GetNext(Guid petId, CancellationToken ct)
     {
-        var result = await _service.GetNextVaccinationAsync(petId, ct);
-        return result is null ? NotFound() : Ok(result);    
+        var result = await _nextVaccination.HandleAsync(new GetNextVaccinationQuery(petId), ct);
+        return result is null ? NotFound() : Ok(result);
     }
 
-
     [HttpPost]
-    [Authorize(Roles = "veterinarian,admin")]
     public async Task<ActionResult<VaccinationDto>> Record(RecordVaccinationRequest request, CancellationToken ct)
     {
-        var result = await _service.RecordVaccinationAsync(request, ct);
+        var result = await _recordVaccination.HandleAsync(new RecordVaccinationCommand(request.PetId, request.OwnerId,
+            request.VeterinarianId, request.VaccineName, request.AdministeredOn, request.NextDueOn, request.BatchNumber), ct);
         return Created($"/api/vaccinations/pet/{result.PetId}", result);
     }
 }
