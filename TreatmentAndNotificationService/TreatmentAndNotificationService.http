@@ -1,6 +1,77 @@
-@TreatmentAndNotificationService_HostAddress = http://localhost:5257
+@TreatmentService = http://localhost:5103
+@AppointmentService = http://localhost:5102
+@petId = a1111111-1111-1111-1111-111111111111
+@ownerId = 33333333-3333-3333-3333-333333333333
+@veterinarianId = 22222222-2222-2222-2222-222222222221
 
-GET {{TreatmentAndNotificationService_HostAddress}}/weatherforecast/
-Accept: application/json
+### Health remains public for Docker/Consul checks.
+GET {{TreatmentService}}/health
 
-###
+### Get a veterinarian token from the temporary local issuer.
+POST {{AppointmentService}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "vet1",
+  "password": "Vet123!"
+}
+
+> {% client.global.set("vetToken", response.body.accessToken); %}
+
+### Get an owner token for authenticated reads.
+POST {{AppointmentService}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "owner1",
+  "password": "Owner123!"
+}
+
+> {% client.global.set("ownerToken", response.body.accessToken); %}
+
+### Get a service token for service-to-service notification calls.
+POST {{AppointmentService}}/auth/token
+Content-Type: application/json
+
+{
+  "clientId": "appointment-service",
+  "clientSecret": "appointment-secret"
+}
+
+> {% client.global.set("serviceToken", response.body.accessToken); %}
+
+### Authenticated users can read medical history.
+GET {{TreatmentService}}/api/treatments/pet/{{petId}}
+Authorization: Bearer {{ownerToken}}
+
+### Only veterinarian/admin can record an examination.
+POST {{TreatmentService}}/api/treatments
+Authorization: Bearer {{vetToken}}
+Content-Type: application/json
+
+{
+  "petId": "{{petId}}",
+  "ownerId": "{{ownerId}}",
+  "veterinarianId": "{{veterinarianId}}",
+  "appointmentId": null,
+  "examinedAtUtc": "2026-08-10T10:00:00Z",
+  "diagnosis": "Routine examination",
+  "treatmentPlan": "Continue regular preventive care",
+  "medications": [],
+  "nextControlAtUtc": "2026-09-10T10:00:00Z",
+  "notes": "No complications"
+}
+
+### Owner tokens cannot create medical records; this returns 403.
+POST {{TreatmentService}}/api/treatments
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{}
+
+### Service tokens may create notifications; invalid data reaches validation and returns 400.
+POST {{TreatmentService}}/api/notifications
+Authorization: Bearer {{serviceToken}}
+Content-Type: application/json
+
+{}

@@ -1,0 +1,473 @@
+{
+  "consumer": {
+    "name": "Treatment API Consumer"
+  },
+  "interactions": [
+    {
+      "description": "a notification without a source event id",
+      "pending": false,
+      "request": {
+        "body": {
+          "content": {
+            "message": "Follow-up is due.",
+            "ownerId": "11111111-1111-1111-1111-111111111111",
+            "petId": "a1111111-1111-1111-1111-111111111111",
+            "scheduledForUtc": "2026-08-12T10:00:00+00:00",
+            "sourceEventId": null,
+            "title": "Veterinary follow-up",
+            "type": "FollowUpReminder"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/api/notifications"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "detail": "Notification source event id is required.",
+            "status": 400,
+            "title": "The request violates a treatment domain rule."
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "status": 400
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request for a pet medical history",
+      "pending": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/treatments/pet/a1111111-1111-1111-1111-111111111111"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "AppointmentId": null,
+              "Diagnosis": "Otitis",
+              "ExaminedAtUtc": "2026-08-01T10:00:00+00:00",
+              "Id": "c1111111-1111-1111-1111-111111111111",
+              "Medications": [
+                "Otomax"
+              ],
+              "NextControlAtUtc": "2026-08-08T10:00:00+00:00",
+              "Notes": "Review in one week",
+              "OwnerId": "11111111-1111-1111-1111-111111111111",
+              "PetId": "a1111111-1111-1111-1111-111111111111",
+              "TreatmentPlan": "Ear drops twice daily",
+              "VeterinarianId": "b1111111-1111-1111-1111-111111111111"
+            }
+          ],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request for a pet vaccination history",
+      "pending": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/vaccinations/pet/a1111111-1111-1111-1111-111111111111"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "AdministeredOn": "2026-02-01",
+              "BatchNumber": "RAB-001",
+              "Id": "d1111111-1111-1111-1111-111111111111",
+              "NextDueOn": "2027-02-01",
+              "OwnerId": "11111111-1111-1111-1111-111111111111",
+              "PetId": "a1111111-1111-1111-1111-111111111111",
+              "VaccineName": "Rabies",
+              "VeterinarianId": "b1111111-1111-1111-1111-111111111111"
+            }
+          ],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request for a pet without an upcoming vaccination",
+      "pending": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/vaccinations/pet/a1111111-1111-1111-1111-111111111111/next"
+      },
+      "response": {
+        "status": 404
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request for an owner notification history",
+      "pending": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/notifications/owner/11111111-1111-1111-1111-111111111111"
+      },
+      "response": {
+        "body": {
+          "content": [
+            {
+              "CreatedAtUtc": "2026-08-06T10:00:00+00:00",
+              "Id": "e1111111-1111-1111-1111-111111111111",
+              "Message": "Follow-up is due.",
+              "OwnerId": "11111111-1111-1111-1111-111111111111",
+              "PetId": "a1111111-1111-1111-1111-111111111111",
+              "ScheduledForUtc": "2026-08-12T10:00:00+00:00",
+              "SentAtUtc": null,
+              "Status": "Pending",
+              "Title": "Veterinary follow-up",
+              "Type": "FollowUpReminder"
+            }
+          ],
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request for an upcoming vaccination",
+      "pending": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/vaccinations/pet/a1111111-1111-1111-1111-111111111111/next"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "AdministeredOn": "2026-02-01",
+            "BatchNumber": "RAB-001",
+            "Id": "d1111111-1111-1111-1111-111111111111",
+            "NextDueOn": "2027-02-01",
+            "OwnerId": "11111111-1111-1111-1111-111111111111",
+            "PetId": "a1111111-1111-1111-1111-111111111111",
+            "VaccineName": "Rabies",
+            "VeterinarianId": "b1111111-1111-1111-1111-111111111111"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a vaccination whose due date is not after administration",
+      "pending": false,
+      "request": {
+        "body": {
+          "content": {
+            "administeredOn": "2026-08-01",
+            "batchNumber": "RAB-001",
+            "nextDueOn": "2026-08-01",
+            "ownerId": "11111111-1111-1111-1111-111111111111",
+            "petId": "a1111111-1111-1111-1111-111111111111",
+            "vaccineName": "Rabies",
+            "veterinarianId": "b1111111-1111-1111-1111-111111111111"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/api/vaccinations"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "detail": "Next vaccine date must be after the administration date.",
+            "status": 400,
+            "title": "The request violates a treatment domain rule."
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "status": 400
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a valid medical examination",
+      "pending": false,
+      "request": {
+        "body": {
+          "content": {
+            "appointmentId": null,
+            "diagnosis": "Otitis",
+            "examinedAtUtc": "2026-08-06T10:00:00+00:00",
+            "medications": [
+              "Otomax"
+            ],
+            "nextControlAtUtc": "2026-08-13T10:00:00+00:00",
+            "notes": "Review in one week",
+            "ownerId": "11111111-1111-1111-1111-111111111111",
+            "petId": "a1111111-1111-1111-1111-111111111111",
+            "treatmentPlan": "Ear drops twice daily",
+            "veterinarianId": "b1111111-1111-1111-1111-111111111111"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/api/treatments"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "AppointmentId": null,
+            "Diagnosis": "Otitis",
+            "ExaminedAtUtc": "2026-08-06T10:00:00+00:00",
+            "Id": "c1111111-1111-1111-1111-111111111111",
+            "Medications": [
+              "Otomax"
+            ],
+            "NextControlAtUtc": "2026-08-13T10:00:00+00:00",
+            "Notes": "Review in one week",
+            "OwnerId": "11111111-1111-1111-1111-111111111111",
+            "PetId": "a1111111-1111-1111-1111-111111111111",
+            "TreatmentPlan": "Ear drops twice daily",
+            "VeterinarianId": "b1111111-1111-1111-1111-111111111111"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ],
+          "Location": [
+            "/api/treatments/pet/a1111111-1111-1111-1111-111111111111"
+          ]
+        },
+        "status": 201
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a valid notification",
+      "pending": false,
+      "request": {
+        "body": {
+          "content": {
+            "message": "Follow-up is due.",
+            "ownerId": "11111111-1111-1111-1111-111111111111",
+            "petId": "a1111111-1111-1111-1111-111111111111",
+            "scheduledForUtc": "2026-08-12T10:00:00+00:00",
+            "sourceEventId": "manual:follow-up:1",
+            "title": "Veterinary follow-up",
+            "type": "FollowUpReminder"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/api/notifications"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "CreatedAtUtc": "2026-08-06T10:00:00+00:00",
+            "Id": "e1111111-1111-1111-1111-111111111111",
+            "Message": "Follow-up is due.",
+            "OwnerId": "11111111-1111-1111-1111-111111111111",
+            "PetId": "a1111111-1111-1111-1111-111111111111",
+            "ScheduledForUtc": "2026-08-12T10:00:00+00:00",
+            "SentAtUtc": null,
+            "Status": "Pending",
+            "Title": "Veterinary follow-up",
+            "Type": "FollowUpReminder"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ],
+          "Location": [
+            "/api/notifications/e1111111-1111-1111-1111-111111111111"
+          ]
+        },
+        "status": 201
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a valid vaccination record",
+      "pending": false,
+      "request": {
+        "body": {
+          "content": {
+            "administeredOn": "2026-08-01",
+            "batchNumber": "RAB-001",
+            "nextDueOn": "2027-08-01",
+            "ownerId": "11111111-1111-1111-1111-111111111111",
+            "petId": "a1111111-1111-1111-1111-111111111111",
+            "vaccineName": "Rabies",
+            "veterinarianId": "b1111111-1111-1111-1111-111111111111"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/api/vaccinations"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "AdministeredOn": "2026-08-01",
+            "BatchNumber": "RAB-001",
+            "Id": "d1111111-1111-1111-1111-111111111111",
+            "NextDueOn": "2027-08-01",
+            "OwnerId": "11111111-1111-1111-1111-111111111111",
+            "PetId": "a1111111-1111-1111-1111-111111111111",
+            "VaccineName": "Rabies",
+            "VeterinarianId": "b1111111-1111-1111-1111-111111111111"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ],
+          "Location": [
+            "/api/vaccinations/pet/a1111111-1111-1111-1111-111111111111"
+          ]
+        },
+        "status": 201
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "an examination whose follow-up precedes the examination",
+      "pending": false,
+      "request": {
+        "body": {
+          "content": {
+            "appointmentId": null,
+            "diagnosis": "Otitis",
+            "examinedAtUtc": "2026-08-06T10:00:00+00:00",
+            "medications": [
+              "Otomax"
+            ],
+            "nextControlAtUtc": "2026-08-05T10:00:00+00:00",
+            "notes": "Review in one week",
+            "ownerId": "11111111-1111-1111-1111-111111111111",
+            "petId": "a1111111-1111-1111-1111-111111111111",
+            "treatmentPlan": "Ear drops twice daily",
+            "veterinarianId": "b1111111-1111-1111-1111-111111111111"
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "method": "POST",
+        "path": "/api/treatments"
+      },
+      "response": {
+        "body": {
+          "content": {
+            "detail": "Follow-up must be after the examination.",
+            "status": 400,
+            "title": "The request violates a treatment domain rule."
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json"
+          ]
+        },
+        "status": 400
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.27",
+      "models": "1.2.8"
+    },
+    "pactSpecification": {
+      "version": "4.0"
+    }
+  },
+  "provider": {
+    "name": "Treatment & Notification Service"
+  }
+}

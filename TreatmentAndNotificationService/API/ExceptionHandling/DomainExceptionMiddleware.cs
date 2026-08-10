@@ -24,6 +24,10 @@ public sealed class DomainExceptionMiddleware
         {
             await WriteProblemAsync(context, StatusCodes.Status400BadRequest, exception.Message);
         }
+        catch (DuplicateSourceEventException exception)
+        {
+            await WriteProblemAsync(context, StatusCodes.Status409Conflict, exception.Message);
+        }
         catch (ArgumentException exception)
         {
             await WriteProblemAsync(context, StatusCodes.Status400BadRequest, exception.Message);
