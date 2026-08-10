@@ -15,16 +15,16 @@ Your responsibilities span the Treatment Service, Kafka event consumption, notif
 ---
 
 ## 1. Service setup and architecture
-- [ ] Create the Treatment Service project structure.
-- [ ] Configure Clean Architecture layers:
-  - [ ] Domain
-  - [ ] Application
-  - [ ] Infrastructure
-  - [ ] API
-- [ ] Configure dependency injection and service registration.
-- [ ] Configure logging, Swagger/OpenAPI, and health checks.
-- [ ] Configure EF Core with PostgreSQL.
-- [ ] Prepare Docker/service startup configuration.
+- [x] Create the Treatment Service project structure.
+- [x] Configure Clean Architecture layers:
+  - [x] Domain
+  - [x] Application
+  - [x] Infrastructure
+  - [x] API
+- [x] Configure dependency injection and service registration.
+- [x] Configure logging, Swagger/OpenAPI, and health checks.
+- [x] Configure EF Core with PostgreSQL.
+- [x] Prepare Docker/service startup configuration.
 
 ### Acceptance criteria
 - The Treatment Service starts independently and exposes Swagger and health endpoints.
@@ -36,25 +36,25 @@ Your responsibilities span the Treatment Service, Kafka event consumption, notif
 You must model the medical domain as a separate business context.
 
 ### MedicalExamination entity
-- [ ] Create the `MedicalExamination` entity.
-- [ ] Add fields such as diagnosis, notes, therapy, prescribed medication, and follow-up information.
-- [ ] Implement validation rules for required medical information.
+- [x] Create the `MedicalExamination` entity.
+- [x] Add fields such as diagnosis, notes, therapy, prescribed medication, and follow-up information.
+- [x] Implement validation rules for required medical information.
 
 ### Vaccination entity
-- [ ] Create the `Vaccination` entity.
-- [ ] Add vaccine name, date administered, and next due date.
-- [ ] Implement rules for vaccination scheduling and due-date calculation.
+- [x] Create the `Vaccination` entity.
+- [x] Add vaccine name, date administered, and next due date.
+- [x] Implement rules for vaccination scheduling and due-date calculation.
 
 ### Notification entity
-- [ ] Create the `Notification` entity.
-- [ ] Add fields for status, scheduled time, and delivery state.
-- [ ] Implement status transitions for pending, sent, and failed notifications.
-- [ ] Add a `SourceEventId` to support idempotency.
+- [x] Create the `Notification` entity.
+- [x] Add fields for status, scheduled time, and delivery state.
+- [x] Implement status transitions for pending, sent, and failed notifications.
+- [x] Add a `SourceEventId` to support idempotency.
 
 ### Domain rules
-- [ ] Implement vaccination scheduling rules.
-- [ ] Implement notification status transitions.
-- [ ] Prevent duplicate processing of the same event.
+- [x] Implement vaccination scheduling rules.
+- [x] Implement notification status transitions.
+- [x] Prevent duplicate processing of the same event.
 
 ### Acceptance criteria
 - Medical data is modeled independently of the other services.
@@ -66,20 +66,20 @@ You must model the medical domain as a separate business context.
 Implement use cases for medical and notification flows.
 
 ### Commands
-- [ ] Implement `AddExamination`
-- [ ] Implement `AddVaccination`
-- [ ] Implement `CreateNotification`
+- [x] Implement `AddExamination`
+- [x] Implement `AddVaccination`
+- [x] Implement `CreateNotification`
 
 ### Queries
-- [ ] Implement `GetMedicalHistory`
-- [ ] Implement `GetVaccinationHistory`
-- [ ] Implement `GetNextVaccination`
+- [x] Implement `GetMedicalHistory`
+- [x] Implement `GetVaccinationHistory`
+- [x] Implement `GetNextVaccination`
 - [ ] Implement `GetPendingNotifications`
 
 ### DTOs and validation
-- [ ] Create medical and notification DTOs.
-- [ ] Add validators for commands and queries.
-- [ ] Implement mapping between entities and DTOs.
+- [x] Create medical and notification DTOs.
+- [x] Add validators for commands and queries.
+- [x] Implement mapping between entities and DTOs.
 
 ### Acceptance criteria
 - Treatment operations are exposed through application services.
@@ -88,12 +88,12 @@ Implement use cases for medical and notification flows.
 ---
 
 ## 4. Infrastructure layer
-- [ ] Create the EF Core `DbContext`.
-- [ ] Configure entity mappings for medical and notification data.
-- [ ] Implement repository interfaces and concrete repositories.
-- [ ] Add migrations.
-- [ ] Seed sample medical data and notifications for demonstration.
-- [ ] Ensure the service uses its own PostgreSQL database.
+- [x] Create the EF Core `DbContext`.
+- [x] Configure entity mappings for medical and notification data.
+- [x] Implement repository interfaces and concrete repositories.
+- [x] Add migrations.
+- [x] Seed sample medical data and notifications for demonstration.
+- [x] Ensure the service uses its own PostgreSQL database.
 
 ### Acceptance criteria
 - Treatment data is isolated in the Treatment Service database.
@@ -105,12 +105,12 @@ Implement use cases for medical and notification flows.
 You are responsible for processing appointment events produced by Appointment Service.
 
 ### Consumers
-- [ ] Consume `AppointmentScheduled` events.
-- [ ] Consume `AppointmentCancelled` events.
-- [ ] Consume `AppointmentRescheduled` events.
-- [ ] Implement idempotency handling with `SourceEventId`.
-- [ ] Commit offsets only after successful processing.
-- [ ] Add retry and error handling for failed processing.
+- [x] Consume `AppointmentScheduled` events.
+- [x] Consume `AppointmentCancelled` events.
+- [x] Consume `AppointmentRescheduled` events.
+- [x] Implement idempotency handling with `SourceEventId`.
+- [x] Commit offsets only after successful processing.
+- [x] Add retry and error handling for failed processing.
 
 ### Acceptance criteria
 - Notifications are created only once per event.
@@ -121,11 +121,11 @@ You are responsible for processing appointment events produced by Appointment Se
 ## 6. Notification worker
 Implement the background processing part of the notification flow.
 
-- [ ] Create a background worker service.
-- [ ] Implement a scheduler for pending notifications.
-- [ ] Implement a demo console sender for notifications.
+- [x] Create a background worker service.
+- [x] Implement a scheduler for pending notifications.
+- [x] Implement a demo console sender for notifications.
 - [ ] Add placeholders for email and SMS delivery.
-- [ ] Ensure sending is safe and logged clearly.
+- [x] Ensure sending is safe and logged clearly.
 
 ### Acceptance criteria
 - Notifications can be processed and emitted in the demo environment.
@@ -136,12 +136,12 @@ Implement the background processing part of the notification flow.
 ## 7. REST API layer
 Expose treatment and notification functionality through REST endpoints.
 
-- [ ] `POST /examinations`
-- [ ] `POST /vaccinations`
-- [ ] `GET /medical-history`
-- [ ] `GET /vaccinations`
-- [ ] `GET /next-vaccination`
-- [ ] `GET /health`
+- [x] `POST /examinations`
+- [x] `POST /vaccinations`
+- [x] `GET /medical-history`
+- [x] `GET /vaccinations`
+- [x] `GET /next-vaccination`
+- [x] `GET /health`
 
 ### Acceptance criteria
 - The API supports medical record and notification management.
@@ -194,10 +194,10 @@ You own the shared MCP server in the architecture.
 
 ## 11. Testing
 - [ ] Write unit tests for domain logic.
-- [ ] Write integration tests for Kafka processing.
+- [x] Write integration tests for Kafka processing.
 - [ ] Write worker tests for notification processing.
 - [ ] Add MCP Inspector or client-side tests.
-- [ ] Add health endpoint tests.
+- [x] Add health endpoint tests.
 
 ### Acceptance criteria
 - Event processing and notification flow are covered by automated tests.
@@ -209,7 +209,7 @@ You own the shared MCP server in the architecture.
 - [ ] Document the Treatment Service architecture and domain design.
 - [ ] Document the Kafka consumer flow and notification model.
 - [ ] Document the MCP server responsibilities and tool registration.
-- [ ] Add Swagger/OpenAPI documentation for the API.
+- [x] Add Swagger/OpenAPI documentation for the API.
 - [ ] Prepare the service explanation for the final presentation.
 
 ---

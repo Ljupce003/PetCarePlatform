@@ -5,6 +5,7 @@ using TreatmentAndNotificationService.Application;
 using TreatmentAndNotificationService.Application.Services;
 using TreatmentAndNotificationService.Application.Services.Impl;
 using TreatmentAndNotificationService.Domain.Repositories;
+using TreatmentAndNotificationService.Infrastructure.Messaging;
 using TreatmentAndNotificationService.Infrastructure.Notifications;
 using TreatmentAndNotificationService.Infrastructure.Persistence;
 using TreatmentAndNotificationService.Infrastructure.Persistence.RepoImpl;
@@ -37,6 +38,25 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFile));
 });
 builder.Services.AddSwaggerGenNewtonsoftSupport();
+
+
+builder.Services.AddOptions<KafkaConsumerOptions>()
+    .Bind(builder.Configuration.GetSection(KafkaConsumerOptions.SectionName))
+    .Validate(options => !string.IsNullOrWhiteSpace(options.BootstrapServers),
+        "Kafka:BootstrapServers is required.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.GroupId),
+        "Kafka:GroupId is required.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.Topic),
+        "Kafka:Topic is required.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.DeadLetterTopic),
+        "Kafka:DeadLetterTopic is required.")
+    .Validate(options => options.MaxProcessingAttempts > 0,
+        "Kafka:MaxProcessingAttempts must be greater than zero.")
+    .Validate(options => options.RetryDelayMilliseconds >= 0,
+        "Kafka:RetryDelayMilliseconds cannot be negative.")
+    .ValidateOnStart();
+builder.Services.AddHostedService<AppointmentEventConsumer>();
+
 
 var app = builder.Build();
 app.UseMiddleware<DomainExceptionMiddleware>();

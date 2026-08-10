@@ -38,6 +38,21 @@ services:
       timeout: 5s
       retries: 25
 
+  kafka-init:
+    image: apache/kafka:4.1.0
+    container_name: petcare-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists
+        --topic petcare.appointments --partitions 3 --replication-factor 1 &&
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists
+        --topic petcare.appointments.dlq --partitions 3 --replication-factor 1
+
   pet-db:
     image: postgres:17-alpine
     container_name: petcare-pet-db
@@ -138,6 +153,8 @@ services:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
 
   treatment-and-notification-service:
     image: petcare/treatment-and-notification-service:latest
@@ -149,13 +166,21 @@ services:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Database: "Host=treatment-db;Port=5432;Database=treatments_db;Username=postgres;Password=mysecretpassword"
-      # FIX: Renamed the key below to prevent dictionary overwrite
-      ConnectionStrings__AppointmentDatabase: "Host=appointment-db;Port=5432;Database=petcare_appointment;Username=postgres;Password=postgres"
+      Kafka__BootstrapServers: "kafka:9092"
+      Kafka__GroupId: "treatment-notification-service"
+      Kafka__Topic: "petcare.appointments"
+      Kafka__DeadLetterTopic: "petcare.appointments.dlq"
+      Kafka__MaxProcessingAttempts: "3"
+      Kafka__RetryDelayMilliseconds: "1000"
     ports:
       - "5103:8080"
     depends_on:
       treatment-db:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
 
 volumes:
   pet-db-data:
