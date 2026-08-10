@@ -1,4 +1,28 @@
 services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.7.0
+    container_name: petcare-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+      APPOINTMENT_SERVICE_CLIENT_SECRET: appointment-secret
+      TREATMENT_SERVICE_CLIENT_SECRET: treatment-secret
+      MCP_SERVER_CLIENT_SECRET: mcp-secret
+      API_GATEWAY_CLIENT_SECRET: gateway-secret
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infrastructure/keycloak/petcare-realm.json:/opt/keycloak/data/import/petcare-realm.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/9000; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; grep -q \"200 OK\" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    mem_limit: 1g
+
   consul:
     image: hashicorp/consul:1.21.5
     container_name: petcare-consul
@@ -115,9 +139,13 @@ services:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Database: "Host=pet-db;Port=5432;Database=petcare_pet;Username=petcare;Password=petcare"
+      Jwt__Authority: "http://keycloak:8080/realms/petcare"
+      Jwt__RequireHttpsMetadata: "false"
     ports:
       - "5101:8080"
     depends_on:
+      keycloak:
+        condition: service_healthy
       pet-db:
         condition: service_healthy
 

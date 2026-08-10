@@ -1,8 +1,14 @@
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
 using PetService.Api.ErrorHandling;
+using PetService.Api.OpenApi;
+using PetService.Api.Security;
 using PetService.Infrastructure;
 using PetService.Infrastructure.Persistence;
 
@@ -34,7 +40,37 @@ builder.Services.AddControllers()
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 
-builder.Services.AddOpenApi();
+var jwt = builder.Configuration.GetRequiredSection("Jwt");
+var authority = jwt["Authority"]
+    ?? throw new InvalidOperationException("Jwt:Authority is required.");
+var audience = jwt["Audience"]
+    ?? throw new InvalidOperationException("Jwt:Audience is required.");
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = authority.TrimEnd('/');
+        options.Audience = audience;
+        options.RequireHttpsMetadata = jwt.GetValue("RequireHttpsMetadata", true);
+        options.MapInboundClaims = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            NameClaimType = "preferred_username",
+            RoleClaimType = ClaimTypes.Role,
+            ClockSkew = TimeSpan.FromSeconds(30)
+        };
+    });
+builder.Services.AddTransient<IClaimsTransformation, KeycloakRoleClaimsTransformation>();
+builder.Services.AddAuthorization();
+
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+    options.AddOperationTransformer<AuthorizeOperationTransformer>();
+});
 
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<PetDbContext>("pet-database", tags: ["ready"]);
@@ -60,6 +96,9 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions
     Predicate = _ => false,
     ResponseWriter = WriteHealthResponseAsync
 });
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

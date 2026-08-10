@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetService.Application.Commands;
 using PetService.Application.Dtos;
@@ -8,6 +9,7 @@ namespace PetService.Api.Controllers;
 
 [ApiController]
 [Route("pets")]
+[Authorize]
 public class PetsController(
     RegisterPetHandler registerPet,
     UpdatePetHandler updatePet,
@@ -17,6 +19,7 @@ public class PetsController(
     CheckPetOwnershipHandler checkPetOwnership) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Roles = "owner,admin")]
     [ProducesResponseType<PetDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -30,6 +33,7 @@ public class PetsController(
     }
 
     [HttpGet("{id:guid}")]
+    [Authorize(Roles = "owner,admin")]
     [ProducesResponseType<PetDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PetDto>> GetById(Guid id, CancellationToken cancellationToken)
@@ -46,11 +50,13 @@ public class PetsController(
     }
 
     [HttpGet]
+    [Authorize(Roles = "owner,admin")]
     [ProducesResponseType<IReadOnlyList<PetDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<PetDto>>> GetAll(CancellationToken cancellationToken) =>
         Ok(await getAllPets.HandleAsync(new GetAllPetsQuery(), cancellationToken));
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = "owner,admin")]
     [ProducesResponseType<PetDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -62,6 +68,7 @@ public class PetsController(
         Ok(await updatePet.HandleAsync(new UpdatePetCommand(id, request), cancellationToken));
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "owner,admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
@@ -71,6 +78,7 @@ public class PetsController(
     }
 
     [HttpGet("{id:guid}/exists")]
+    [Authorize(Roles = "owner,admin,service")]
     [ProducesResponseType<PetOwnershipDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PetOwnershipDto>> CheckOwnership(

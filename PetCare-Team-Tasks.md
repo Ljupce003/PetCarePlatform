@@ -444,12 +444,12 @@ Own the shared MCP server.
 
 ### Keycloak
 
-* [ ] Create Realm
-* [ ] Create Roles
-* [ ] Create Clients
-* [ ] Configure Client Credentials
-* [ ] Configure JWT validation
-* [ ] Document authentication flow
+* [x] Create Realm
+* [x] Create Roles
+* [x] Create Clients
+* [x] Configure Client Credentials
+* [x] Configure JWT validation
+* [x] Document authentication flow
 
 ---
 
@@ -461,7 +461,7 @@ Own the shared MCP server.
 * [ ] Kafka
 * [ ] Zookeeper/KRaft
 * [ ] Consul
-* [ ] Keycloak
+* [x] Keycloak
 * [ ] Three microservices
 * [ ] MCP Server
 * [ ] API Gateway

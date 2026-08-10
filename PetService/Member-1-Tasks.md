@@ -143,12 +143,12 @@ You must expose the Pet Service through REST endpoints.
 ---
 
 ## 6. Security and authorization
-- [ ] Implement JWT authentication for the Pet Service.
-- [ ] Add role-based authorization for:
-  - [ ] `owner`
-  - [ ] `admin`
-- [ ] Enforce authorization policies on owner and pet endpoints.
-- [ ] Ensure the service can validate tokens issued by Keycloak.
+- [x] Implement JWT authentication for the Pet Service.
+- [x] Add role-based authorization for:
+  - [x] `owner`
+  - [x] `admin`
+- [x] Enforce authorization policies on owner and pet endpoints.
+- [x] Ensure the service can validate tokens issued by Keycloak.
 
 ### Acceptance criteria
 - Protected endpoints reject unauthorized requests.

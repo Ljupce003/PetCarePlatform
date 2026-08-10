@@ -1,0 +1,229 @@
+{
+  "realm": "petcare",
+  "displayName": "PetCare Platform",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "accessTokenLifespan": 900,
+  "roles": {
+    "realm": [
+      { "name": "owner", "description": "Pet owner" },
+      { "name": "veterinarian", "description": "Veterinary professional" },
+      { "name": "admin", "description": "PetCare administrator" },
+      { "name": "service", "description": "Service-to-service caller" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "pet-service",
+      "name": "Pet Service API",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "bearerOnly": true
+    },
+    {
+      "clientId": "appointment-service",
+      "name": "Appointment Service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${APPOINTMENT_SERVICE_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "protocolMappers": [
+        {
+          "name": "petcare-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "petcare",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "treatment-service",
+      "name": "Treatment and Notification Service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${TREATMENT_SERVICE_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "protocolMappers": [
+        {
+          "name": "petcare-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "petcare",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "mcp-server",
+      "name": "PetCare MCP Server",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${MCP_SERVER_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "protocolMappers": [
+        {
+          "name": "petcare-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "petcare",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "api-gateway",
+      "name": "PetCare API Gateway",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${API_GATEWAY_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:7000/*"],
+      "webOrigins": ["http://localhost:7000"],
+      "fullScopeAllowed": true,
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "protocolMappers": [
+        {
+          "name": "petcare-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "petcare",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "petcare-demo",
+      "name": "PetCare Demo Client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:*/*"],
+      "webOrigins": ["+"],
+      "fullScopeAllowed": true,
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic", "email"],
+      "protocolMappers": [
+        {
+          "name": "petcare-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "petcare",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "username": "owner1",
+      "email": "owner1@petcare.local",
+      "firstName": "Demo",
+      "lastName": "Owner",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": ["owner"],
+      "credentials": [
+        { "type": "password", "value": "Owner123!", "temporary": false }
+      ]
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222221",
+      "username": "vet1",
+      "email": "vet1@petcare.local",
+      "firstName": "Demo",
+      "lastName": "Veterinarian",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": ["veterinarian"],
+      "credentials": [
+        { "type": "password", "value": "Vet123!", "temporary": false }
+      ]
+    },
+    {
+      "id": "55555555-5555-5555-5555-555555555553",
+      "username": "admin1",
+      "email": "admin1@petcare.local",
+      "firstName": "Demo",
+      "lastName": "Administrator",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": ["admin"],
+      "credentials": [
+        { "type": "password", "value": "Admin123!", "temporary": false }
+      ]
+    },
+    {
+      "username": "service-account-appointment-service",
+      "enabled": true,
+      "serviceAccountClientId": "appointment-service",
+      "realmRoles": ["service"]
+    },
+    {
+      "username": "service-account-treatment-service",
+      "enabled": true,
+      "serviceAccountClientId": "treatment-service",
+      "realmRoles": ["service"]
+    },
+    {
+      "username": "service-account-mcp-server",
+      "enabled": true,
+      "serviceAccountClientId": "mcp-server",
+      "realmRoles": ["service"]
+    }
+  ]
+}

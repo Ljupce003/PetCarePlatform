@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetService.Application.Commands;
 using PetService.Application.Dtos;
@@ -8,6 +9,7 @@ namespace PetService.Api.Controllers;
 
 [ApiController]
 [Route("owners")]
+[Authorize(Roles = "owner,admin")]
 public class OwnersController(
     CreateOwnerHandler createOwner,
     UpdateOwnerHandler updateOwner,
