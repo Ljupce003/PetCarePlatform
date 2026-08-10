@@ -172,6 +172,9 @@ services:
       Kafka__DeadLetterTopic: "petcare.appointments.dlq"
       Kafka__MaxProcessingAttempts: "3"
       Kafka__RetryDelayMilliseconds: "1000"
+      Jwt__Issuer: "appointment-service"
+      Jwt__Audience: "petcare"
+      Jwt__SigningKey: "dev-only-signing-key-change-me-32-chars-minimum!!"
     ports:
       - "5103:8080"
     depends_on:

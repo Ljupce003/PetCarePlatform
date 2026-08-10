@@ -1,9 +1,14 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.IdentityModel.Tokens;
 using TreatmentAndNotificationService.Infrastructure.Persistence;
 
 namespace TreatmentAndNotificationService.Api.IntegrationTests;
@@ -15,6 +20,10 @@ namespace TreatmentAndNotificationService.Api.IntegrationTests;
 /// </summary>
 public sealed class TreatmentApiFactory(string connectionString) : WebApplicationFactory<Program>
 {
+    private const string JwtIssuer = "appointment-service";
+    private const string JwtAudience = "petcare";
+    private const string JwtSigningKey = "dev-only-signing-key-change-me-32-chars-minimum!!";
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
@@ -37,5 +46,31 @@ public sealed class TreatmentApiFactory(string connectionString) : WebApplicatio
     {
         using var scope = Services.CreateScope();
         return await action(scope.ServiceProvider.GetRequiredService<TreatmentDbContext>());
+    }
+
+    public HttpClient CreateAuthenticatedClient(string role)
+    {
+        var client = CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateToken(role));
+        return client;
+    }
+
+    private static string CreateToken(string role)
+    {
+        var credentials = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSigningKey)),
+            SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken(
+            issuer: JwtIssuer,
+            audience: JwtAudience,
+            claims:
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, $"{role}-integration-test"),
+                new Claim(ClaimTypes.Role, role)
+            ],
+            expires: DateTime.UtcNow.AddMinutes(10),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

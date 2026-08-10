@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TreatmentAndNotificationService.Application.Abstractions;
 using TreatmentAndNotificationService.Application.Commands;
@@ -8,6 +9,7 @@ namespace TreatmentAndNotificationService.API.Controllers;
 
 [ApiController]
 [Route("api/vaccinations")]
+[Authorize]
 public sealed class VaccinationsController: ControllerBase
 {
     private readonly ICommandHandler<RecordVaccinationCommand, VaccinationDto> _recordVaccination;
@@ -56,6 +58,7 @@ public sealed class VaccinationsController: ControllerBase
     /// <response code="201">The vaccination and any reminder were recorded.</response>
     /// <response code="400">A required field is missing or the next due date is not after the administration date.</response>
     [HttpPost]
+    [Authorize(Roles = "veterinarian,admin")]
     [ProducesResponseType(typeof(VaccinationDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<VaccinationDto>> Record([FromBody] RecordVaccinationRequest request, CancellationToken ct)

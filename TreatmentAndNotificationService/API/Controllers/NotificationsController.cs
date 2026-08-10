@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TreatmentAndNotificationService.Application.Abstractions;
 using TreatmentAndNotificationService.Application.Commands;
@@ -8,6 +9,7 @@ namespace TreatmentAndNotificationService.API.Controllers;
 
 [ApiController]
 [Route("api/notifications")]
+[Authorize]
 public class NotificationsController : ControllerBase
 {
     private readonly ICommandHandler<CreateNotificationCommand, NotificationDto> _createNotification;
@@ -27,6 +29,7 @@ public class NotificationsController : ControllerBase
     /// <response code="200">The notification-history query completed successfully.</response>
     /// <response code="404">The route does not contain a valid GUID owner identifier.</response>
     [HttpGet("owner/{ownerId:guid}")]
+    [Authorize(Roles = "owner,admin,service")]
     [ProducesResponseType(typeof(IReadOnlyList<NotificationDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public Task<IReadOnlyList<NotificationDto>> GetByOwner([FromRoute] Guid ownerId, CancellationToken ct) =>
@@ -40,6 +43,7 @@ public class NotificationsController : ControllerBase
     /// <response code="400">The notification content, schedule, identifiers, or source event identifier is invalid.</response>
     /// <response code="409">A notification with the same source event identifier already exists.</response>
     [HttpPost]
+    [Authorize(Roles = "admin,service")]
     [ProducesResponseType(typeof(NotificationDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]

@@ -150,12 +150,12 @@ Expose treatment and notification functionality through REST endpoints.
 ---
 
 ## 8. Security and authorization
-- [ ] Implement JWT authentication.
-- [ ] Add authorization for:
-  - [ ] `veterinarian`
-  - [ ] `admin`
-- [ ] Protect medical data endpoints appropriately.
-- [ ] Ensure service-to-service authentication is configured correctly.
+- [x] Implement JWT authentication.
+- [x] Add authorization for:
+  - [x] `veterinarian`
+  - [x] `admin`
+- [x] Protect medical data endpoints appropriately.
+- [x] Ensure service-to-service authentication is configured correctly.
 
 ### Acceptance criteria
 - Only authorized actors can create medical records and notifications.

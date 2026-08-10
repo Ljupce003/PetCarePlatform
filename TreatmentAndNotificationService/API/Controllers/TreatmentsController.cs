@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TreatmentAndNotificationService.Application.Abstractions;
 using TreatmentAndNotificationService.Application.Commands;
@@ -8,6 +9,7 @@ namespace TreatmentAndNotificationService.API.Controllers;
 
 [ApiController]
 [Route("api/treatments")]
+[Authorize]
 public sealed class TreatmentsController: ControllerBase
 {
     private readonly ICommandHandler<RecordMedicalExaminationCommand, MedicalExaminationDto> _recordExamination;
@@ -40,6 +42,7 @@ public sealed class TreatmentsController: ControllerBase
     /// <response code="201">The examination and any follow-up reminder were recorded.</response>
     /// <response code="400">A required identifier or medical field is missing or invalid; follow-up must be after the examination.</response>
     [HttpPost]
+    [Authorize(Roles = "veterinarian,admin")]
     [ProducesResponseType(typeof(MedicalExaminationDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MedicalExaminationDto>> Record([FromBody] RecordMedicalExaminationRequest request, CancellationToken ct)

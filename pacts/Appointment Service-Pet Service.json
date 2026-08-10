@@ -1,0 +1,96 @@
+{
+  "consumer": {
+    "name": "Appointment Service"
+  },
+  "interactions": [
+    {
+      "description": "a request to verify a pet that does not exist",
+      "pending": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/pets/44444444-4444-4444-4444-444444444444/exists",
+        "query": {
+          "ownerId": [
+            "33333333-3333-3333-3333-333333333333"
+          ]
+        }
+      },
+      "response": {
+        "status": 404
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to verify a pet that exists and belongs to the given owner",
+      "pending": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/pets/44444444-4444-4444-4444-444444444444/exists",
+        "query": {
+          "ownerId": [
+            "33333333-3333-3333-3333-333333333333"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "content": {
+            "exists": true,
+            "ownedByOwner": true
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ]
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    },
+    {
+      "description": "a request to verify a pet that exists but does not belong to the given owner",
+      "pending": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/pets/44444444-4444-4444-4444-444444444444/exists",
+        "query": {
+          "ownerId": [
+            "33333333-3333-3333-3333-333333333333"
+          ]
+        }
+      },
+      "response": {
+        "body": {
+          "content": {
+            "exists": true,
+            "ownedByOwner": false
+          },
+          "contentType": "application/json",
+          "encoded": false
+        },
+        "headers": {
+          "Content-Type": [
+            "application/json; charset=utf-8"
+          ]
+        },
+        "status": 200
+      },
+      "type": "Synchronous/HTTP"
+    }
+  ],
+  "metadata": {
+    "pactRust": {
+      "ffi": "0.4.27",
+      "models": "1.2.8"
+    },
+    "pactSpecification": {
+      "version": "4.0"
+    }
+  },
+  "provider": {
+    "name": "Pet Service"
+  }
+}

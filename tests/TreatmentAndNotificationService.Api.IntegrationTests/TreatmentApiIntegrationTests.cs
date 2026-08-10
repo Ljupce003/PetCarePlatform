@@ -26,7 +26,7 @@ public sealed class TreatmentApiIntegrationTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _client = _factory.CreateClient(); // starts the real host and applies the production migrations
+        _client = _factory.CreateAuthenticatedClient("admin"); // starts the real host and applies production migrations
         await _factory.ResetDatabaseAsync();
     }
 
