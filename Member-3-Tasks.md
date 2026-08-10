@@ -193,7 +193,7 @@ You own the shared MCP server in the architecture.
 ---
 
 ## 11. Testing
-- [ ] Write unit tests for domain logic.
+- [x] Write unit tests for domain logic.
 - [x] Write integration tests for Kafka processing.
 - [ ] Write worker tests for notification processing.
 - [ ] Add MCP Inspector or client-side tests.

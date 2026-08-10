@@ -13,6 +13,7 @@
     <Project Path="tests/AppointmentService.PactTests/AppointmentService.PactTests.csproj" />
   </Folder>
   <Folder Name="/TreatmentAndNotificationService/Tests/">
+    <Project Path="tests/TreatmentAndNotificationService.Domain.Tests/TreatmentAndNotificationService.Domain.Tests.csproj" />
     <Project Path="tests/TreatmentAndNotificationService.PactTests/TreatmentAndNotificationService.PactTests.csproj" />
     <Project Path="tests/TreatmentAndNotificationService.Api.IntegrationTests/TreatmentAndNotificationService.Api.IntegrationTests.csproj" />
   </Folder>
