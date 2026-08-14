@@ -414,7 +414,7 @@ Own the shared MCP server.
 * [x] Configure Streamable HTTP transport
 * [x] Configure dependency injection
 * [x] Configure service authentication
-* [ ] Configure API Gateway integration
+* [x] Configure API Gateway integration
 * [x] Register all MCP tools
 * [x] Test MCP server with Inspector
 
@@ -464,7 +464,7 @@ Own the shared MCP server.
 * [x] Keycloak
 * [ ] Three microservices
 * [x] MCP Server
-* [ ] API Gateway
+* [x] API Gateway
 
 ### Consul
 
@@ -477,10 +477,10 @@ Own the shared MCP server.
 
 ### API Gateway (YARP)
 
-* [ ] Route configuration
-* [ ] Authentication forwarding
+* [x] Route configuration
+* [x] Authentication forwarding
 * [ ] Service discovery integration
-* [ ] MCP endpoint routing
+* [x] MCP endpoint routing
 
 ---
 

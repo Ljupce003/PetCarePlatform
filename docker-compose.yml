@@ -77,6 +77,7 @@ services:
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists
         --topic petcare.appointments.dlq --partitions 3 --replication-factor 1
 
+
   pet-db:
     image: postgres:17-alpine
     container_name: petcare-pet-db
@@ -140,6 +141,9 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Database: "Host=pet-db;Port=5432;Database=petcare_pet;Username=petcare;Password=petcare"
       Jwt__Authority: "http://keycloak:8080/realms/petcare"
+      Jwt__Issuer: "http://localhost:8080/realms/petcare"
+      Jwt__Audience: "petcare"
+      Jwt__ClientId: "pet-service"
       Jwt__RequireHttpsMetadata: "false"
     ports:
       - "5101:8080"
@@ -170,9 +174,16 @@ services:
       ServiceRegistration__Port: "8080"
       Kafka__BootstrapServers: "kafka:9092"
       Kafka__ClientId: "appointment-service"
+      Jwt__Authority: "http://keycloak:8080/realms/petcare"
+      Jwt__Issuer: "http://localhost:8080/realms/petcare"
+      Jwt__Audience: "petcare"
+      Jwt__ClientId: "appointment-service"
+      Jwt__RequireHttpsMetadata: "false"
     ports:
       - "5102:8080"
     depends_on:
+      keycloak:
+        condition: service_healthy
       appointment-db:
         condition: service_healthy
       pet-service:
@@ -200,12 +211,16 @@ services:
       Kafka__DeadLetterTopic: "petcare.appointments.dlq"
       Kafka__MaxProcessingAttempts: "3"
       Kafka__RetryDelayMilliseconds: "1000"
-      Jwt__Issuer: "appointment-service"
+      Jwt__Authority: "http://keycloak:8080/realms/petcare"
+      Jwt__Issuer: "http://localhost:8080/realms/petcare"
       Jwt__Audience: "petcare"
-      Jwt__SigningKey: "dev-only-signing-key-change-me-32-chars-minimum!!"
+      Jwt__ClientId: "treatment-service"
+      Jwt__RequireHttpsMetadata: "false"
     ports:
       - "5103:8080"
     depends_on:
+      keycloak:
+        condition: service_healthy
       treatment-db:
         condition: service_healthy
       kafka:
@@ -225,18 +240,60 @@ services:
       Services__PetServiceUrl: "http://pet-service:8080/"
       Services__AppointmentServiceUrl: "http://appointment-service:8080/"
       Services__TreatmentServiceUrl: "http://treatment-and-notification-service:8080/"
-      Jwt__Issuer: "appointment-service"
+      Jwt__Authority: "http://keycloak:8080/realms/petcare"
+      Jwt__Issuer: "http://localhost:8080/realms/petcare"
       Jwt__Audience: "petcare"
-      Jwt__SigningKey: "dev-only-signing-key-change-me-32-chars-minimum!!"
+      Jwt__ClientId: "mcp-server"
+      Jwt__RequireHttpsMetadata: "false"
       AllowedHosts: "localhost;127.0.0.1;mcp-server"
     ports:
       - "7001:8080"
     depends_on:
+      keycloak:
+        condition: service_healthy
       pet-service:
         condition: service_started
       appointment-service:
         condition: service_started
       treatment-and-notification-service:
+        condition: service_started
+
+  api-gateway:
+    image: petcare/api-gateway:latest
+    container_name: petcare-api-gateway
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_HTTP_PORTS: 8080
+
+      Jwt__Authority: "http://keycloak:8080/realms/petcare"
+      Jwt__Issuer: "http://localhost:8080/realms/petcare"
+      Jwt__Audience: "petcare"
+      Jwt__ClientId: "api-gateway"
+      Jwt__RequireHttpsMetadata: "false"
+
+      ReverseProxy__Clusters__pet-cluster__Destinations__pet-service__Address: "http://pet-service:8080/"
+      ReverseProxy__Clusters__appointment-cluster__Destinations__appointment-service__Address: "http://appointment-service:8080/"
+      ReverseProxy__Clusters__treatment-cluster__Destinations__treatment-service__Address: "http://treatment-and-notification-service:8080/"
+      ReverseProxy__Clusters__mcp-cluster__Destinations__mcp-server__Address: "http://mcp-server:8080/"
+
+      AllowedHosts: "localhost;127.0.0.1;api-gateway"
+
+    ports:
+      - "7000:8080"
+
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      pet-service:
+        condition: service_started
+      appointment-service:
+        condition: service_started
+      treatment-and-notification-service:
+        condition: service_started
+      mcp-server:
         condition: service_started
 
 volumes:

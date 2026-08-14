@@ -171,7 +171,7 @@ You own the shared MCP server in the architecture.
 - [x] Configure Streamable HTTP transport.
 - [x] Configure dependency injection.
 - [x] Configure service authentication for MCP requests.
-- [ ] Integrate the MCP server with the API Gateway.
+- [x] Integrate the MCP server with the API Gateway.
 - [x] Register all tools from the service owners.
 - [x] Test the server with MCP Inspector or another MCP client.
 
@@ -182,9 +182,9 @@ You own the shared MCP server in the architecture.
 ---
 
 ## 10. Integration with gateway and shared infrastructure
-- [ ] Ensure the Treatment Service is correctly routed through the API Gateway.
-- [ ] Confirm the shared security model works for gateway and service access.
-- [ ] Verify cross-service communication paths in the deployed environment.
+- [x] Ensure the Treatment Service is correctly routed through the API Gateway.
+- [x] Confirm the shared security model works for gateway and service access.
+- [x] Verify cross-service communication paths in the deployed environment.
 
 ### Acceptance criteria
 - The full system is reachable through the gateway.

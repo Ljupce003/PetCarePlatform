@@ -1,0 +1,53 @@
+@keycloak = http://localhost:8080
+@gateway = http://localhost:7000
+@petId = bd591fac-4b2c-47bb-8d57-a2f317a42fc2
+
+### Obtain a demo veterinarian token from Keycloak
+POST {{keycloak}}/realms/petcare/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=petcare-demo&username=vet1&password=Vet123!
+
+> {% client.global.set("petcare_token", response.body.access_token); %}
+
+### Gateway health does not require a token
+GET {{gateway}}/health
+
+### Record an examination through Gateway -> Treatment Service
+POST {{gateway}}/treatment/api/treatments
+Authorization: Bearer {{petcare_token}}
+Content-Type: application/json
+
+{
+  "petId": "{{petId}}",
+  "ownerId": "d8ee7d11-6e26-40e0-a62c-a0a950402ba6",
+  "veterinarianId": "f793a3bd-c804-4a6b-8940-f6a80a9e4a87",
+  "appointmentId": null,
+  "examinedAtUtc": "2026-08-14T09:35:00Z",
+  "diagnosis": "Gateway end-to-end verified",
+  "treatmentPlan": "No treatment required",
+  "medications": [],
+  "nextControlAtUtc": null,
+  "notes": "Created through API Gateway"
+}
+
+### Read it through Gateway -> Treatment Service
+GET {{gateway}}/treatment/api/treatments/pet/{{petId}}
+Authorization: Bearer {{petcare_token}}
+
+### Initialize Gateway -> MCP Server
+POST {{gateway}}/mcp
+Authorization: Bearer {{petcare_token}}
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-11-25","capabilities":{},"clientInfo":{"name":"rider-http-client","version":"1.0"}}}
+
+### Call Gateway -> MCP -> Treatment Service
+POST {{gateway}}/mcp
+Authorization: Bearer {{petcare_token}}
+MCP-Protocol-Version: 2025-11-25
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_medical_history","arguments":{"petId":"{{petId}}"}}}
