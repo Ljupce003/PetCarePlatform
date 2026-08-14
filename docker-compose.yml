@@ -185,6 +185,32 @@ services:
       kafka-init:
         condition: service_completed_successfully
 
+  mcp-server:
+    image: petcare/mcp-server:latest
+    container_name: petcare-mcp-server
+    build:
+      context: .
+      dockerfile: MCPServer/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_HTTP_PORTS: 8080
+      Services__PetServiceUrl: "http://pet-service:8080/"
+      Services__AppointmentServiceUrl: "http://appointment-service:8080/"
+      Services__TreatmentServiceUrl: "http://treatment-and-notification-service:8080/"
+      Jwt__Issuer: "appointment-service"
+      Jwt__Audience: "petcare"
+      Jwt__SigningKey: "dev-only-signing-key-change-me-32-chars-minimum!!"
+      AllowedHosts: "localhost;127.0.0.1;mcp-server"
+    ports:
+      - "7001:8080"
+    depends_on:
+      pet-service:
+        condition: service_started
+      appointment-service:
+        condition: service_started
+      treatment-and-notification-service:
+        condition: service_started
+
 volumes:
   pet-db-data:
   appointment-db-data:

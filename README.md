@@ -63,7 +63,7 @@ Appointment Service е consumer, а Pet Service е provider. Pact consumer test 
 
 ## 10. MCP сервер
 
-MCP серверот користи официјален C# SDK и Streamable HTTP transport. Изложени се четири tools: `GetPet`, `GetUpcomingAppointments`, `GetNextVaccination` и `FindAvailableVeterinarians`. MCP серверот не пристапува директно до базите, преку service-account токен го повикува API Gateway, со што ги почитува истите сервисни граници и security правила. Може да се тестира со MCP Inspector или друг MCP client на `http://localhost:7001/mcp`.
+MCP серверот користи официјален C# SDK и stateless Streamable HTTP transport. Изложени се девет tools: `get_pet`, `get_owner_pets`, `find_available_veterinarians`, `get_upcoming_appointments`, `get_medical_history`, `get_vaccination_history`, `get_next_vaccination`, `record_medical_examination` и `record_vaccination`. MCP серверот не пристапува директно до базите; тој ги повикува REST API-јата на сервисите и го проследува валидираниот bearer token. Може да се тестира со MCP Inspector или друг MCP client на `http://localhost:7001/mcp`. API Gateway routing останува последниот заеднички MCP infrastructure чекор.
 
 ## 11. Тестирање и демонстрација
 
