@@ -82,7 +82,9 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IUnitOfWork>(serviceProvider => serviceProvider.GetRequiredService<TreatmentDbContext>());
 builder.Services.AddScoped<IAppointmentNotificationApplicationService, AppointmentNotificationApplicationService>();
 builder.Services.AddTreatmentApplication();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<INotificationSender, ConsoleNotificationSender>();
+builder.Services.AddScoped<NotificationDeliveryProcessor>();
 builder.Services.AddHostedService<NotificationDeliveryWorker>();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -120,7 +122,6 @@ app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/openapi/v1.json", "Treatment & Notification Service v1");
 });
-app.UseHttpsRedirection();
 app.MapHealthChecks("/health");
 app.UseAuthentication();
 app.UseAuthorization();

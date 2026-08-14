@@ -34,8 +34,7 @@ Aggregate roots се `Owner` и `Pet`. `Pet` содржи value object `Microchi
 
 ### Treatment & Notification Service
 
-Овозможува внесување прегледи и вакцинации и читање медицинска историја. Background Kafka consumer ги обработува AppointmentScheduled, AppointmentCancelled и AppointmentRescheduled настаните. За секој настан создава идемпотентно известување. Друг background worker ги испраќа пристигнатите известувања во demo режим преку console log.  
-`TODO:` оваа имплементација може да се замени со email/SMS provider.
+Овозможува внесување прегледи и вакцинации и читање медицинска историја. Background Kafka consumer ги обработува AppointmentScheduled, AppointmentCancelled и AppointmentRescheduled настаните. За секој настан создава идемпотентно известување. Друг background worker ги испраќа пристигнатите известувања во demo режим преку console log. Console sender-от е намерно избрана финална demo имплементација; email/SMS providers и `GetPendingNotifications` endpoint не се дел од договорениот опсег на проектот. Деталната архитектура и текот на обработка се документирани во [`TreatmentAndNotificationService/README.md`](TreatmentAndNotificationService/README.md).
 
 ## 5. Комуникација меѓу сервисите
 

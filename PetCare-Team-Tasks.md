@@ -313,40 +313,40 @@ Implement Appointment-related MCP tools.
 
 ### 1. Project Setup
 
-* [ ] Create Treatment Service
-* [ ] Configure Clean Architecture
-* [ ] Configure EF Core
-* [ ] Configure PostgreSQL
-* [ ] Configure Swagger
-* [ ] Configure Health Checks
+* [x] Create Treatment Service
+* [x] Configure Clean Architecture
+* [x] Configure EF Core
+* [x] Configure PostgreSQL
+* [x] Configure Swagger
+* [x] Configure Health Checks
 
 ### 2. Domain
 
 #### Medical Examination
 
-* [ ] Entity
-* [ ] Diagnosis
-* [ ] Notes
+* [x] Entity
+* [x] Diagnosis
+* [x] Notes
 
 #### Vaccination
 
-* [ ] Entity
-* [ ] Vaccine
-* [ ] Date
-* [ ] Next Due Date
+* [x] Entity
+* [x] Vaccine
+* [x] Date
+* [x] Next Due Date
 
 #### Notification
 
-* [ ] Entity
-* [ ] Status
-* [ ] Scheduled Time
-* [ ] Delivery State
+* [x] Entity
+* [x] Status
+* [x] Scheduled Time
+* [x] Delivery State
 
 ##### Domain Rules
 
-* [ ] Vaccination scheduling
-* [ ] Notification status transitions
-* [ ] SourceEventId idempotency
+* [x] Vaccination scheduling
+* [x] Notification status transitions
+* [x] SourceEventId idempotency
 
 ---
 
@@ -354,55 +354,55 @@ Implement Appointment-related MCP tools.
 
 ##### Commands
 
-* [ ] Add Examination
-* [ ] Add Vaccination
-* [ ] Create Notification
+* [x] Add Examination
+* [x] Add Vaccination
+* [x] Create Notification
 
 ##### Queries
 
-* [ ] Medical History
-* [ ] Vaccination History
-* [ ] Next Vaccination
-* [ ] Pending Notifications
+* [x] Medical History
+* [x] Vaccination History
+* [x] Next Vaccination
+* **Out of scope:** Pending Notifications query
 
 ### 4. Infrastructure
 
-* [ ] DbContext
-* [ ] Repositories
-* [ ] Seed Data
-* [ ] Entity configurations
+* [x] DbContext
+* [x] Repositories
+* [x] Seed Data
+* [x] Entity configurations
 
 
 ### 5. Kafka
 
 ##### Consumer
 
-* [ ] Consume AppointmentScheduled
-* [ ] Consume AppointmentCancelled
-* [ ] Consume AppointmentRescheduled
-* [ ] Idempotency handling
-* [ ] Offset commit after success
-* [ ] Error handling
-* [ ] Retry policy
+* [x] Consume AppointmentScheduled
+* [x] Consume AppointmentCancelled
+* [x] Consume AppointmentRescheduled
+* [x] Idempotency handling
+* [x] Offset commit after success
+* [x] Error handling and dead-letter topic
+* [x] Retry policy
 
 
 ### 6. Notification Worker
 
-* [ ] Background Worker
-* [ ] Notification Scheduler
-* [ ] Console Notification Sender
-* [ ] Email placeholder
-* [ ] SMS placeholder
+* [x] Background Worker
+* [x] Notification Scheduler
+* [x] Console Notification Sender
+* **Out of scope:** Email provider/placeholder
+* **Out of scope:** SMS provider/placeholder
 
 
 ### 7. API
 
-* [ ] Add Examination
-* [ ] Add Vaccination
-* [ ] Get Medical History
-* [ ] Get Vaccinations
-* [ ] Get Next Vaccination
-* [ ] Health endpoint
+* [x] Add Examination
+* [x] Add Vaccination
+* [x] Get Medical History
+* [x] Get Vaccinations
+* [x] Get Next Vaccination
+* [x] Health endpoint
 
 
 ### 8. MCP Infrastructure
@@ -423,18 +423,18 @@ Own the shared MCP server.
 
 ### 9. Security
 
-* [ ] JWT
-* [ ] Veterinarian authorization
-* [ ] Admin authorization
+* [x] JWT/Keycloak validation
+* [x] Veterinarian authorization
+* [x] Admin authorization
 
 
 ### 10. Testing
 
-* [ ] Unit tests
-* [ ] Kafka integration tests
-* [ ] Worker tests
+* [x] Unit tests
+* [x] Kafka integration tests
+* [x] Worker tests
 * [x] MCP Inspector tests
-* [ ] Health tests
+* [x] Health tests
 
 ---
 
@@ -479,7 +479,7 @@ Own the shared MCP server.
 
 * [x] Route configuration
 * [x] Authentication forwarding
-* [ ] Service discovery integration
+* **Not used by design:** Gateway routing uses stable Docker service DNS; Consul discovery is demonstrated by the Appointment → Pet integration.
 * [x] MCP endpoint routing
 
 ---
