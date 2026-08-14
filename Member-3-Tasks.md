@@ -166,14 +166,14 @@ Expose treatment and notification functionality through REST endpoints.
 ## 9. MCP server infrastructure
 You own the shared MCP server in the architecture.
 
-- [ ] Create the MCP Server project.
-- [ ] Configure the MCP SDK.
-- [ ] Configure Streamable HTTP transport.
-- [ ] Configure dependency injection.
-- [ ] Configure service authentication for MCP requests.
+- [x] Create the MCP Server project.
+- [x] Configure the MCP SDK.
+- [x] Configure Streamable HTTP transport.
+- [x] Configure dependency injection.
+- [x] Configure service authentication for MCP requests.
 - [ ] Integrate the MCP server with the API Gateway.
-- [ ] Register all tools from the service owners.
-- [ ] Test the server with MCP Inspector or another MCP client.
+- [x] Register all tools from the service owners.
+- [x] Test the server with MCP Inspector or another MCP client.
 
 ### Acceptance criteria
 - The MCP server can be started and accessed via the chosen transport.
@@ -196,7 +196,7 @@ You own the shared MCP server in the architecture.
 - [x] Write unit tests for domain logic.
 - [x] Write integration tests for Kafka processing.
 - [ ] Write worker tests for notification processing.
-- [ ] Add MCP Inspector or client-side tests.
+- [x] Add MCP Inspector or client-side tests.
 - [x] Add health endpoint tests.
 
 ### Acceptance criteria
@@ -208,7 +208,7 @@ You own the shared MCP server in the architecture.
 ## 12. Documentation and deliverables
 - [ ] Document the Treatment Service architecture and domain design.
 - [ ] Document the Kafka consumer flow and notification model.
-- [ ] Document the MCP server responsibilities and tool registration.
+- [x] Document the MCP server responsibilities and tool registration.
 - [x] Add Swagger/OpenAPI documentation for the API.
 - [ ] Prepare the service explanation for the final presentation.
 
