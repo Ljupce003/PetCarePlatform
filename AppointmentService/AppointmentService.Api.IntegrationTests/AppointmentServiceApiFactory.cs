@@ -1,5 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using AppointmentService.Application.Abstractions;
+using AppointmentService.Infrastructure.Clients;
 using AppointmentService.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -14,15 +16,17 @@ namespace AppointmentService.Api.IntegrationTests;
 /// Boots the real Api/Application/Infrastructure composition (real controllers, real
 /// [Authorize]/role checks, real domain rules) against an EF Core InMemory database instead of
 /// Postgres, and swaps the Kafka publisher for an in-memory spy -- so the HTTP pipeline is
-/// exercised without needing Docker/Postgres/Kafka running. Pet-ownership verification uses
-/// FakePetVerificationClient automatically, the same way it does for local `dotnet run`, since
-/// this factory doesn't change the environment from "Development" (see
-/// appsettings.Development.json's PetService:UseFakeVerification).
+/// exercised without needing Docker/Postgres/Kafka running.
 ///
-/// JWT auth is the one dependency this can't fake away: both token validation (Program.cs) and
-/// <c>POST /auth/login</c> (AuthController) always go through the real Keycloak realm now, so
-/// <c>Jwt:Authority</c> (default: http://localhost:8080/realms/petcare) must be reachable for
-/// these tests to pass -- run `docker compose up keycloak` first.
+/// Runs under the "Testing" environment specifically (see <see cref="ConfigureWebHost"/>): CI has
+/// no live Keycloak to reach, so this is the one environment Program.cs's JWT bearer setup and
+/// AuthController.Login validate/issue a locally-signed token for instead of going through
+/// Keycloak -- every other environment (local `dotnet run`, Docker, production) is Keycloak-only.
+/// Pet-ownership verification still uses FakePetVerificationClient, forced via an explicit
+/// service override below rather than the PetService:UseFakeVerification config switch: Program.cs
+/// reads that setting (deciding between FakePetVerificationClient/PetServiceClient) before this
+/// factory's ConfigureWebHost customizations are applied, so a config-only override arrives too
+/// late to change which one gets registered.
 /// </summary>
 public sealed class AppointmentServiceApiFactory : WebApplicationFactory<Program>
 {
@@ -32,8 +36,16 @@ public sealed class AppointmentServiceApiFactory : WebApplicationFactory<Program
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Testing");
+
         builder.ConfigureServices(services =>
         {
+            // See the class summary: overriding here (post-registration) instead of via
+            // PetService:UseFakeVerification, since Program.cs's config-driven choice between
+            // this and the real PetServiceClient already ran by the time ConfigureWebHost fires.
+            services.RemoveAll<IPetVerificationClient>();
+            services.AddSingleton<IPetVerificationClient, FakePetVerificationClient>();
+
             // Program.cs's own AddDbContext<AppointmentDbContext>(UseNpgsql) already ran by this
             // point and left Npgsql's provider services in this same IServiceCollection --
             // RemoveAll<DbContextOptions<...>>() only removes the *options* registration, not
@@ -68,7 +80,7 @@ public sealed class AppointmentServiceApiFactory : WebApplicationFactory<Program
         });
     }
 
-    /// <summary>Logs in as one of the demo users (owner1/vet1/admin1) against real Keycloak and returns a client with the resulting token attached.</summary>
+    /// <summary>Logs in as one of the demo users (owner1/vet1/admin1) via the "Testing"-environment local token (see <see cref="TestUsers"/>) and returns a client with it attached.</summary>
     public async Task<HttpClient> CreateAuthenticatedClientAsync(string username, string password)
     {
         var client = CreateClient();

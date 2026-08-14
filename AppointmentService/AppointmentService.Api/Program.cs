@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using AppointmentService.Api.Security;
 using Microsoft.AspNetCore.Authentication;
@@ -37,24 +38,33 @@ else
 
 builder.Services.AddControllers();
 
-// Real Keycloak, always -- no locally-signed fallback for validating incoming tokens. Requires a
-// reachable Keycloak (Jwt:Authority) in every environment this runs in, including tests.
+// Real Keycloak everywhere this actually runs (local dotnet run, Docker, production) -- no
+// locally-signed fallback there. The one exception is the "Testing" environment, which only
+// WebApplicationFactory-driven integration tests use (see AppointmentServiceApiFactory): CI has
+// no live Keycloak to reach, so that one environment validates a locally-signed token instead.
+// AuthController.Login has the matching branch for issuing that token.
 var jwtSection = builder.Configuration.GetRequiredSection("Jwt");
 var jwtIssuer = jwtSection["Issuer"]
     ?? throw new InvalidOperationException("Jwt:Issuer is required.");
 var jwtAudience = jwtSection["Audience"]
     ?? throw new InvalidOperationException("Jwt:Audience is required.");
+var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
+var jwtSigningKey = jwtSection["SigningKey"];
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.MapInboundClaims = false;
-        options.Authority = (jwtSection["Authority"]
-            ?? throw new InvalidOperationException("Jwt:Authority is required."))
-            .TrimEnd('/');
-        options.Audience = jwtAudience;
-        options.RequireHttpsMetadata = jwtSection.GetValue("RequireHttpsMetadata", true);
+
+        if (!isTestEnvironment)
+        {
+            options.Authority = (jwtSection["Authority"]
+                ?? throw new InvalidOperationException("Jwt:Authority is required."))
+                .TrimEnd('/');
+            options.Audience = jwtAudience;
+            options.RequireHttpsMetadata = jwtSection.GetValue("RequireHttpsMetadata", true);
+        }
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -63,6 +73,10 @@ builder.Services
             ValidateAudience = true,
             ValidAudience = jwtAudience,
             ValidateIssuerSigningKey = true,
+            IssuerSigningKey = isTestEnvironment
+                ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey
+                    ?? throw new InvalidOperationException("Jwt:SigningKey is required in the Testing environment.")))
+                : null,
             ValidateLifetime = true,
             NameClaimType = "preferred_username",
             RoleClaimType = ClaimTypes.Role,
