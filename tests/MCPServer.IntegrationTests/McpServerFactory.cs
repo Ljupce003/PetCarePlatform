@@ -126,6 +126,62 @@ public sealed class CapturingAppointmentHandler : HttpMessageHandler
             return Json(HttpStatusCode.OK, appointments);
         }
 
+        if (request.RequestUri?.AbsolutePath == "/clinics")
+        {
+            var clinics = new[]
+            {
+                new ClinicResponse(
+                    Guid.Parse("33333333-3333-3333-3333-333333333333"),
+                    "Central Vet Clinic", "Skopje", "Bul. Ilinden 1")
+            };
+            return Json(HttpStatusCode.OK, clinics);
+        }
+
+        if (request.Method == HttpMethod.Get && request.RequestUri?.AbsolutePath == "/slots")
+        {
+            var slots = new[]
+            {
+                new AvailableSlotResponse(
+                    Guid.Parse("66666666-6666-6666-6666-666666666666"),
+                    Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                    "Dr. Ana", "Surgery",
+                    Guid.Parse("33333333-3333-3333-3333-333333333333"), "Central Vet Clinic",
+                    DateTimeOffset.Parse("2026-08-18T09:00:00Z"),
+                    DateTimeOffset.Parse("2026-08-18T09:30:00Z"))
+            };
+            return Json(HttpStatusCode.OK, slots);
+        }
+
+        if (request.RequestUri?.AbsolutePath == "/veterinarians/available")
+        {
+            var results = new[]
+            {
+                new OpenAppointmentSlotsResponse(
+                    Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                    "Dr. Ana", "Surgery",
+                    Guid.Parse("33333333-3333-3333-3333-333333333333"), "Central Vet Clinic",
+                    [
+                        new AvailableSlotSummaryResponse(
+                            Guid.Parse("66666666-6666-6666-6666-666666666666"),
+                            DateTimeOffset.Parse("2026-08-18T09:00:00Z"),
+                            DateTimeOffset.Parse("2026-08-18T09:30:00Z"))
+                    ])
+            };
+            return Json(HttpStatusCode.OK, results);
+        }
+
+        if (request.Method == HttpMethod.Post && request.RequestUri?.AbsolutePath == "/slots")
+        {
+            var created = new AvailableSlotResponse(
+                Guid.Parse("77777777-7777-7777-7777-777777777777"),
+                Guid.Parse("22222222-2222-2222-2222-222222222222"),
+                "Dr. Ana", "Surgery",
+                Guid.Parse("33333333-3333-3333-3333-333333333333"), "Central Vet Clinic",
+                DateTimeOffset.Parse("2026-08-18T14:00:00Z"),
+                DateTimeOffset.Parse("2026-08-18T14:30:00Z"));
+            return Json(HttpStatusCode.Created, created);
+        }
+
         return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
     }
 

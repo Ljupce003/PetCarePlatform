@@ -273,40 +273,27 @@ Nothing in `PetServiceClient` itself needs to change — it only ever sees `Http
 
 ## MCP contribution
 
-Member 2's appointment-related tools for the shared MCP server (`Member-2-Tasks.md`, section 10)
-are exposed directly from this service's own process, at `POST /mcp` — not a separate project.
-`AppointmentService.Api/Mcp/AppointmentTools.cs` is a thin `[McpServerToolType]` wrapper around the
-existing Application-layer query handlers (the same ones the REST controllers call), resolved from
-the same DI container as the rest of the API — no second copy of any business rule, no extra
-network hop, no separate auth story.
+There is now one real shared MCP server for the whole team, the top-level `MCPServer` project —
+not something each service hosts itself. Member 2's appointment-related tools
+(`Member-2-Tasks.md`, section 10) live there, in `MCPServer/Tools/AppointmentTools.cs`, calling this
+service over plain REST through `MCPServer/Clients/AppointmentServiceClient.cs`. An earlier version
+of this exposed the same tools directly from this service's own process at `POST /mcp`; that's been
+removed in favor of the real shared server now that it exists (see that project's own docs for the
+current tool list and how `BearerTokenForwardingHandler` forwards the caller's own Keycloak token
+downstream, so — unlike the old in-process version — write actions like opening a slot are safe:
+they run as the actual authenticated caller, not as this service impersonating "some admin").
 
-Tools:
+The one REST addition this made necessary: `GET /veterinarians/available?date=&location=&specialization=`
+(`VeterinariansController.Available`), backed by `FindAvailableVeterinariansHandler`
+(`AppointmentService.Application/Queries/FindAvailableVeterinarians.cs`) — a normal Application-layer
+handler like any other, covered by its own tests in `AppointmentService.Application.Tests`, just
+also reachable over REST now so the external MCP server can call it in one round trip instead of
+re-implementing the clinic/slot join itself. It composes two existing reads (`IClinicRepository` +
+`IAvailabilitySlotRepository`) rather than adding a new repository query, since clinics only carry
+their own `Location` and slot search results don't.
 
-- `FindAvailableVeterinarians(date, location?, specialization?)` and
-  `GetUpcomingAppointments(ownerId)` — the two required by the task list.
-- `SearchClinics(location?)`, `SearchVeterinarians(clinicId?, specialization?)`,
-  `SearchAvailableSlots(veterinarianId?, date?)` — the rest of the read-only query surface, for
-  browsing individually instead of only through the composite search.
-- `CreateAvailableSlot(veterinarianId, startsAtUtc, endsAtUtc)` — the one write tool. Opens a new
-  slot for an existing veterinarian; same as `POST /slots` (admin-only over REST). Unlike
-  booking/cancelling/rescheduling, opening a slot isn't done "on behalf of" a specific owner, so it
-  doesn't have the same missing-identity problem — it's an administrative/scheduling action, closer
-  to seeding demo data than to a customer action.
-
-`FindAvailableVeterinarians` has no dedicated repository query behind it — clinics only carry their
-own `Location`, and slot search results don't — so `FindAvailableVeterinariansHandler`
-(`AppointmentService.Application/Queries/FindAvailableVeterinarians.cs`) composes two existing
-reads: it resolves matching clinic ids from `IClinicRepository` (only when a location filter is
-given) and filters/groups the open slots for the date from `IAvailabilitySlotRepository`
-client-side. It's a first-class Application-layer handler like any other, registered in
-`AddAppointmentServiceApplication` and covered by its own tests in
-`AppointmentService.Application.Tests`.
-
-Deliberately read-only: booking, cancelling and rescheduling stay REST-only endpoints
-(`AppointmentsController`), since those actions need a specific, authenticated owner/admin — an MCP
-tool call here has no such per-user identity to act as. `/mcp` itself is unauthenticated, the same
-reasoning as `/health`: it re-uses the exact same validation as the REST endpoints and there's
-nothing service-to-service to authenticate anymore now that everything runs in one process.
+`POST /slots` (admin-only, `AvailabilitySlotsController.Create`) is the other endpoint the MCP
+server's write tool uses to open new slots.
 
 ## Pet Service contract this service depends on
 
