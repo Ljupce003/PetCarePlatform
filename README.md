@@ -45,7 +45,7 @@ Aggregate roots се `Owner` и `Pet`. `Pet` содржи value object `Microchi
 
 ## 6. API Gateway и service discovery
 
-YARP е централизирана влезна точка. Патеките `/pet`, `/appointment` и `/treatment` се рутираат кон соодветните сервиси, а gateway-от бара автентициран корисник. Во Docker cluster YARP користи внатрешни DNS адреси. Сите компоненти дополнително се регистрираат во Consul. Appointment Service го користи Consul health API за runtime discovery, со што може да избере меѓу повеќе здрави инстанци.
+YARP е централизирана влезна точка. Патеките `/pet`, `/appointment`, `/treatment` и `/mcp` се рутираат кон соодветните сервиси, а gateway-от бара автентициран корисник. Во Docker cluster YARP користи внатрешни DNS адреси и го проследува оригиналниот bearer token. Сите компоненти дополнително се регистрираат во Consul. Appointment Service го користи Consul health API за runtime discovery, со што може да избере меѓу повеќе здрави инстанци.
 
 ## 7. Безбедност
 
@@ -63,7 +63,7 @@ Appointment Service е consumer, а Pet Service е provider. Pact consumer test 
 
 ## 10. MCP сервер
 
-MCP серверот користи официјален C# SDK и stateless Streamable HTTP transport. Изложени се девет tools: `get_pet`, `get_owner_pets`, `find_available_veterinarians`, `get_upcoming_appointments`, `get_medical_history`, `get_vaccination_history`, `get_next_vaccination`, `record_medical_examination` и `record_vaccination`. MCP серверот не пристапува директно до базите; тој ги повикува REST API-јата на сервисите и го проследува валидираниот bearer token. Може да се тестира со MCP Inspector или друг MCP client на `http://localhost:7001/mcp`. API Gateway routing останува последниот заеднички MCP infrastructure чекор.
+MCP серверот користи официјален C# SDK и stateless Streamable HTTP transport. Изложени се девет tools: `get_pet`, `get_owner_pets`, `find_available_veterinarians`, `get_upcoming_appointments`, `get_medical_history`, `get_vaccination_history`, `get_next_vaccination`, `record_medical_examination` и `record_vaccination`. MCP серверот не пристапува директно до базите; тој ги повикува REST API-јата на сервисите и го проследува валидираниот bearer token. Може да се тестира директно на `http://localhost:7001/mcp` или преку API Gateway на `http://localhost:7000/mcp`. Скриптата `scripts/verify-gateway-treatment-mcp.sh` го проверува реалниот Keycloak -> Gateway -> MCP -> Treatment тек.
 
 ## 11. Тестирање и демонстрација
 

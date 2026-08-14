@@ -1,24 +1,38 @@
+using System.Security.Claims;
 using System.Text;
 using MCPServer.Clients;
+using MCPServer.Security;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using ModelContextProtocol.Protocol;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var jwtSection = builder.Configuration.GetSection("Jwt");
+var jwtSection = builder.Configuration.GetRequiredSection("Jwt");
 var jwtIssuer = jwtSection["Issuer"]
     ?? throw new InvalidOperationException("Jwt:Issuer is required.");
 var jwtAudience = jwtSection["Audience"]
     ?? throw new InvalidOperationException("Jwt:Audience is required.");
-var jwtSigningKey = jwtSection["SigningKey"]
-    ?? throw new InvalidOperationException(
-        "Jwt:SigningKey is required. Set it through configuration or Jwt__SigningKey.");
+var jwtSigningKey = jwtSection["SigningKey"];
+var useLegacyDevelopmentTokens = !builder.Environment.IsEnvironment("Docker") &&
+                                 !string.IsNullOrWhiteSpace(jwtSigningKey);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
+
+        if (!useLegacyDevelopmentTokens)
+        {
+            options.Authority = (jwtSection["Authority"]
+                ?? throw new InvalidOperationException("Jwt:Authority is required in Docker."))
+                .TrimEnd('/');
+            options.Audience = jwtAudience;
+            options.RequireHttpsMetadata = jwtSection.GetValue("RequireHttpsMetadata", true);
+        }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -26,11 +40,16 @@ builder.Services
             ValidateAudience = true,
             ValidAudience = jwtAudience,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey)),
+            IssuerSigningKey = useLegacyDevelopmentTokens
+                ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey!))
+                : null,
             ValidateLifetime = true,
+            NameClaimType = "preferred_username",
+            RoleClaimType = ClaimTypes.Role,
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
+builder.Services.AddTransient<IClaimsTransformation, KeycloakRoleClaimsTransformation>();
 builder.Services.AddAuthorization();
 
 builder.Services.AddHttpContextAccessor();

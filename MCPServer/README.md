@@ -49,6 +49,7 @@ docker compose up --build mcp-server
 ```
 
 Inside Docker, the MCP server uses the Compose service names on port `8080`; local development uses ports `5101` through `5103`.
+The public Docker endpoint is routed through the API Gateway at `http://localhost:7000/mcp`.
 
 ## Tests
 
@@ -58,6 +59,6 @@ dotnet test tests/MCPServer.IntegrationTests/MCPServer.IntegrationTests.csproj
 
 The integration suite verifies anonymous health access, MCP authentication, initialization, all nine tools, downstream route selection, response parsing, and bearer-token forwarding. Its required end-to-end test starts a real Treatment API with PostgreSQL, records an examination through MCP, and reads it back through MCP.
 
-## Remaining shared integration
+## Gateway end-to-end verification
 
-The repository currently has no API Gateway project, so gateway routing is the remaining shared MCP infrastructure step.
+Run `scripts/verify-gateway-treatment-mcp.sh` after starting the Gateway stack. It obtains a real Keycloak veterinarian token, records and reads Treatment data through YARP, and reads the same persisted data through the MCP route.

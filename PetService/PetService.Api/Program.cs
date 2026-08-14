@@ -56,6 +56,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
+            ValidIssuer = jwt["Issuer"] ?? authority.TrimEnd('/'),
             ValidateAudience = true,
             ValidateLifetime = true,
             NameClaimType = "preferred_username",
