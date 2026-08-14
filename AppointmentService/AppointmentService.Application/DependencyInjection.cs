@@ -16,11 +16,13 @@ public static class DependencyInjection
         services.AddScoped<ScheduleAppointmentHandler>();
         services.AddScoped<CancelAppointmentHandler>();
         services.AddScoped<RescheduleAppointmentHandler>();
+        services.AddScoped<CreateAvailabilitySlotHandler>();
 
         services.AddScoped<SearchClinicsHandler>();
         services.AddScoped<SearchVeterinariansHandler>();
         services.AddScoped<SearchAvailableSlotsHandler>();
         services.AddScoped<GetUpcomingAppointmentsHandler>();
+        services.AddScoped<FindAvailableVeterinariansHandler>();
 
         return services;
     }

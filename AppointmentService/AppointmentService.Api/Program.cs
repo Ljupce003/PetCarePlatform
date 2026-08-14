@@ -10,6 +10,7 @@ using AppointmentService.Application.Exceptions;
 using AppointmentService.Domain.Exceptions;
 using AppointmentService.Infrastructure;
 using AppointmentService.Infrastructure.Persistence;
+using ModelContextProtocol.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +73,14 @@ builder.Services.AddHealthChecks()
 
 builder.Services.AddAppointmentServiceInfrastructure(builder.Configuration);
 
+// Section 10 (MCP contribution): exposes this service's own appointment queries as MCP tools at
+// /mcp, in the same process as the REST API -- see Mcp/AppointmentTools.cs. The tool class is
+// discovered via WithToolsFromAssembly() and resolved from this same DI container, so it can
+// take the existing query handlers as constructor dependencies with no extra wiring.
+builder.Services.AddMcpServer()
+    .WithHttpTransport(options => options.Stateless = true)
+    .WithToolsFromAssembly();
+
 var app = builder.Build();
 
 // Maps the exceptions thrown by the Application/Domain layers to the HTTP status a REST client
@@ -99,6 +108,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Unauthenticated by design, same reasoning as /health above: these are read-only queries
+// re-using the exact same Application-layer validation as the REST endpoints, and there's no
+// per-user identity for an MCP tool call to act as anyway (see Mcp/AppointmentTools.cs).
+app.MapMcp("/mcp");
 
 // Make sure the Appointment Service database exists before accepting traffic. Failures are
 // logged, not thrown, so the service still starts and reports itself via /health even if

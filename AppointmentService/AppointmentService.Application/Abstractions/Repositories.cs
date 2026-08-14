@@ -34,6 +34,8 @@ public interface IAvailabilitySlotRepository
 
     Task<IReadOnlyList<AvailableSlotSearchResult>> SearchAvailableAsync(
         Guid? veterinarianId, DateOnly? date, CancellationToken cancellationToken);
+
+    Task AddAsync(AvailabilitySlot slot, CancellationToken cancellationToken);
 }
 
 public interface IAppointmentRepository
