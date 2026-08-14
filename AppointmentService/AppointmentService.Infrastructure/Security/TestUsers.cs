@@ -5,10 +5,13 @@ namespace AppointmentService.Infrastructure.Security;
 public sealed record TestUser(Guid Id, string Username, string Password, string Role);
 
 /// <summary>
-/// One fixed demo user per role required by the task list (owner, veterinarian, admin), for
-/// logging in via <c>POST /auth/login</c>. Dev/test only — plaintext passwords are fine here
-/// because this whole login endpoint is a stand-in for Keycloak (see README), not a real identity
-/// store, and none of this ships as a real user database.
+/// One fixed demo user per role (owner, veterinarian, admin), consulted ONLY by
+/// <c>AuthController.Login</c>'s "Testing" environment branch -- i.e. only inside
+/// <c>AppointmentService.Api.IntegrationTests</c> (CI has no live Keycloak to log in against).
+/// Every other environment (local <c>dotnet run</c>, Docker, production) always logs in against
+/// the real Keycloak realm instead; see KeycloakAuthClient. The ids intentionally match the same
+/// demo users seeded in infrastructure/keycloak/petcare-realm.json, so a token from either path
+/// resolves to the same seeded owner/veterinarian this service already knows about.
 /// </summary>
 public static class TestUsers
 {
@@ -25,21 +28,4 @@ public static class TestUsers
         All.FirstOrDefault(user =>
             string.Equals(user.Username, username, StringComparison.OrdinalIgnoreCase) &&
             user.Password == password);
-}
-
-public sealed record TestClient(string ClientId, string ClientSecret);
-
-/// <summary>
-/// Registered "client applications" for the OAuth2 client-credentials grant at
-/// <c>POST /auth/token</c> — this service is the only one registered today, since it's the only
-/// caller of <see cref="LocalServiceAccessTokenProvider"/>.
-/// </summary>
-public static class TestClients
-{
-    public static readonly TestClient AppointmentService = new("appointment-service", "appointment-secret");
-
-    public static readonly IReadOnlyList<TestClient> All = [AppointmentService];
-
-    public static TestClient? Find(string? clientId, string? clientSecret) =>
-        All.FirstOrDefault(client => client.ClientId == clientId && client.ClientSecret == clientSecret);
 }

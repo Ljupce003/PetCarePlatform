@@ -66,11 +66,15 @@ public sealed class McpProtocolTests(McpServerFactory factory) : IClassFixture<M
         var tools = payload.RootElement.GetProperty("result").GetProperty("tools").EnumerateArray().ToArray();
         var names = tools.Select(tool => tool.GetProperty("name").GetString()).ToArray();
 
-        Assert.Equal(9, tools.Length);
+        Assert.Equal(13, tools.Length);
         Assert.Contains("get_pet", names);
         Assert.Contains("get_owner_pets", names);
         Assert.Contains("find_available_veterinarians", names);
         Assert.Contains("get_upcoming_appointments", names);
+        Assert.Contains("search_clinics", names);
+        Assert.Contains("search_available_slots", names);
+        Assert.Contains("find_open_appointment_slots", names);
+        Assert.Contains("create_available_slot", names);
         Assert.Contains("get_medical_history", names);
         Assert.Contains("get_vaccination_history", names);
         Assert.Contains("get_next_vaccination", names);
@@ -177,6 +181,73 @@ public sealed class McpProtocolTests(McpServerFactory factory) : IClassFixture<M
 
         Assert.Contains("Annual checkup", ToolText(payload));
         Assert.Equal($"/appointments/upcoming?ownerId={ownerId:D}", factory.AppointmentHandler.LastPath);
+    }
+
+    [Fact]
+    public async Task SearchClinics_ReturnsAppointmentServiceResponse()
+    {
+        using var client = factory.CreateClient();
+        var payload = await CallToolAsync(
+            client,
+            "search_clinics",
+            new { location = "Skopje" },
+            CreateToken("owner"));
+
+        Assert.Contains("Central Vet Clinic", ToolText(payload));
+        Assert.Equal("/clinics?location=Skopje", factory.AppointmentHandler.LastPath);
+    }
+
+    [Fact]
+    public async Task SearchAvailableSlots_ReturnsAppointmentServiceResponse()
+    {
+        using var client = factory.CreateClient();
+        var veterinarianId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var payload = await CallToolAsync(
+            client,
+            "search_available_slots",
+            new { veterinarianId },
+            CreateToken("owner"));
+
+        Assert.Contains("Dr. Ana", ToolText(payload));
+        Assert.Equal($"/slots?veterinarianId={veterinarianId:D}", factory.AppointmentHandler.LastPath);
+    }
+
+    [Fact]
+    public async Task FindOpenAppointmentSlots_ReturnsGroupedVeterinariansWithSlots()
+    {
+        using var client = factory.CreateClient();
+        var payload = await CallToolAsync(
+            client,
+            "find_open_appointment_slots",
+            new { date = "2026-08-18", location = "Skopje" },
+            CreateToken("owner"));
+        var text = ToolText(payload);
+
+        Assert.Contains("Dr. Ana", text);
+        Assert.Contains("availableSlots", text);
+        Assert.Equal("/veterinarians/available?date=2026-08-18&location=Skopje", factory.AppointmentHandler.LastPath);
+    }
+
+    [Fact]
+    public async Task CreateAvailableSlot_PostsToAppointmentServiceAndForwardsBearerToken()
+    {
+        using var client = factory.CreateClient();
+        var veterinarianId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+        var token = CreateToken("admin");
+        var payload = await CallToolAsync(
+            client,
+            "create_available_slot",
+            new
+            {
+                veterinarianId,
+                startsAtUtc = "2026-08-18T14:00:00Z",
+                endsAtUtc = "2026-08-18T14:30:00Z"
+            },
+            token);
+
+        Assert.Contains("Dr. Ana", ToolText(payload));
+        Assert.Equal("/slots", factory.AppointmentHandler.LastPath);
+        Assert.Equal($"Bearer {token}", factory.AppointmentHandler.LastAuthorization);
     }
 
     private static HttpRequestMessage CreateMcpRequest(

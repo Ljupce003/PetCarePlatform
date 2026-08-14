@@ -1,9 +1,11 @@
 namespace AppointmentService.Infrastructure.Security;
 
 /// <summary>
-/// Settings for the locally-signed JWTs this service issues from <c>/auth/login</c> and
-/// <c>/auth/token</c>, and validates on every incoming request. Stands in for Keycloak (see
-/// README) until that exists — <see cref="SigningKey"/> must be at least 32 characters (HMAC-SHA256).
+/// Settings for real Keycloak-backed token validation (<c>Authority</c>/<c>Issuer</c>/
+/// <c>Audience</c>, see README's "Security and authorization"), plus the one remaining
+/// locally-signed JWT this service still issues: the service-to-service token
+/// <see cref="LocalServiceAccessTokenProvider"/> hands out for calls to Pet Service
+/// (<see cref="SigningKey"/> must be at least 32 characters, HMAC-SHA256).
 /// </summary>
 public sealed class JwtOptions
 {

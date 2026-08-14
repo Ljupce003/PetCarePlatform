@@ -13,7 +13,6 @@ using AppointmentService.Application.Exceptions;
 using AppointmentService.Domain.Exceptions;
 using AppointmentService.Infrastructure;
 using AppointmentService.Infrastructure.Persistence;
-using ModelContextProtocol.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,16 +38,18 @@ else
 
 builder.Services.AddControllers();
 
-// Local development and the existing tests retain the service's legacy token endpoints. Docker
-// validates the shared Keycloak realm instead, matching the Gateway and the other services.
+// Real Keycloak everywhere this actually runs (local dotnet run, Docker, production) -- no
+// locally-signed fallback there. The one exception is the "Testing" environment, which only
+// WebApplicationFactory-driven integration tests use (see AppointmentServiceApiFactory): CI has
+// no live Keycloak to reach, so that one environment validates a locally-signed token instead.
+// AuthController.Login has the matching branch for issuing that token.
 var jwtSection = builder.Configuration.GetRequiredSection("Jwt");
 var jwtIssuer = jwtSection["Issuer"]
     ?? throw new InvalidOperationException("Jwt:Issuer is required.");
 var jwtAudience = jwtSection["Audience"]
     ?? throw new InvalidOperationException("Jwt:Audience is required.");
+var isTestEnvironment = builder.Environment.IsEnvironment("Testing");
 var jwtSigningKey = jwtSection["SigningKey"];
-var useLegacyDevelopmentTokens = !builder.Environment.IsEnvironment("Docker") &&
-                                 !string.IsNullOrWhiteSpace(jwtSigningKey);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -56,10 +57,10 @@ builder.Services
     {
         options.MapInboundClaims = false;
 
-        if (!useLegacyDevelopmentTokens)
+        if (!isTestEnvironment)
         {
             options.Authority = (jwtSection["Authority"]
-                ?? throw new InvalidOperationException("Jwt:Authority is required in Docker."))
+                ?? throw new InvalidOperationException("Jwt:Authority is required."))
                 .TrimEnd('/');
             options.Audience = jwtAudience;
             options.RequireHttpsMetadata = jwtSection.GetValue("RequireHttpsMetadata", true);
@@ -72,8 +73,9 @@ builder.Services
             ValidateAudience = true,
             ValidAudience = jwtAudience,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = useLegacyDevelopmentTokens
-                ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey!))
+            IssuerSigningKey = isTestEnvironment
+                ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey
+                    ?? throw new InvalidOperationException("Jwt:SigningKey is required in the Testing environment.")))
                 : null,
             ValidateLifetime = true,
             NameClaimType = "preferred_username",
@@ -95,14 +97,6 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppointmentDbContext>("appointment-database", tags: ["ready"]);
 
 builder.Services.AddAppointmentServiceInfrastructure(builder.Configuration);
-
-// Section 10 (MCP contribution): exposes this service's own appointment queries as MCP tools at
-// /mcp, in the same process as the REST API -- see Mcp/AppointmentTools.cs. The tool class is
-// discovered via WithToolsFromAssembly() and resolved from this same DI container, so it can
-// take the existing query handlers as constructor dependencies with no extra wiring.
-builder.Services.AddMcpServer()
-    .WithHttpTransport(options => options.Stateless = true)
-    .WithToolsFromAssembly();
 
 var app = builder.Build();
 
@@ -131,11 +125,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// Unauthenticated by design, same reasoning as /health above: these are read-only queries
-// re-using the exact same Application-layer validation as the REST endpoints, and there's no
-// per-user identity for an MCP tool call to act as anyway (see Mcp/AppointmentTools.cs).
-app.MapMcp("/mcp");
 
 // Make sure the Appointment Service database exists before accepting traffic. Failures are
 // logged, not thrown, so the service still starts and reports itself via /health even if
