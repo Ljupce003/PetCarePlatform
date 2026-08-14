@@ -30,7 +30,7 @@ public sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvide
                 Scheme = "bearer",
                 BearerFormat = "JWT",
                 In = ParameterLocation.Header,
-                Description = "Paste the accessToken from POST /auth/login or /auth/token (no \"Bearer \" prefix needed)."
+                Description = "Paste the accessToken from POST /auth/login (no \"Bearer \" prefix needed)."
             }
         };
     }
@@ -38,8 +38,8 @@ public sealed class BearerSecuritySchemeTransformer(IAuthenticationSchemeProvide
 
 /// <summary>
 /// Adds the Bearer security requirement to every operation except ones marked
-/// <see cref="AllowAnonymousAttribute"/> (<c>/auth/login</c>, <c>/auth/token</c>), so Swagger UI
-/// only shows a lock icon on endpoints that actually need a token.
+/// <see cref="AllowAnonymousAttribute"/> (<c>/auth/login</c>), so Swagger UI only shows a lock
+/// icon on endpoints that actually need a token.
 /// </summary>
 public sealed class AuthorizeOperationTransformer : IOpenApiOperationTransformer
 {

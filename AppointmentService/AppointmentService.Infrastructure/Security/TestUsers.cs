@@ -5,10 +5,11 @@ namespace AppointmentService.Infrastructure.Security;
 public sealed record TestUser(Guid Id, string Username, string Password, string Role);
 
 /// <summary>
-/// One fixed demo user per role required by the task list (owner, veterinarian, admin), for
-/// logging in via <c>POST /auth/login</c>. Dev/test only — plaintext passwords are fine here
-/// because this whole login endpoint is a stand-in for Keycloak (see README), not a real identity
-/// store, and none of this ships as a real user database.
+/// One fixed demo user per role (owner, veterinarian, admin), used by <c>POST /auth/login</c> only
+/// when running outside Docker without a real Keycloak to check against (see AuthController). The
+/// ids intentionally match the same demo users seeded in infrastructure/keycloak/petcare-realm.json,
+/// so a real Keycloak-issued token's <c>sub</c> claim resolves to the same seeded owner/veterinarian
+/// this service already knows about.
 /// </summary>
 public static class TestUsers
 {
@@ -30,9 +31,11 @@ public static class TestUsers
 public sealed record TestClient(string ClientId, string ClientSecret);
 
 /// <summary>
-/// Registered "client applications" for the OAuth2 client-credentials grant at
-/// <c>POST /auth/token</c> — this service is the only one registered today, since it's the only
-/// caller of <see cref="LocalServiceAccessTokenProvider"/>.
+/// The client identity <see cref="LocalServiceAccessTokenProvider"/> issues a locally-signed
+/// service-to-service token for outside Docker. Not reachable over HTTP (no
+/// <c>/auth/token</c> endpoint anymore) — purely an in-process stand-in for the real
+/// <c>appointment-service</c> confidential client's Keycloak client-credentials grant, which is
+/// what should replace this once Pet Service actually validates the bearer token it receives.
 /// </summary>
 public static class TestClients
 {

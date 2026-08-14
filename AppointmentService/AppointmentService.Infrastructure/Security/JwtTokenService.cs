@@ -22,7 +22,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options)
             new Claim(ClaimTypes.Role, role)
         ]);
 
-    /// <summary>Issues a token for a service-to-service caller via <c>POST /auth/token</c> (client-credentials).</summary>
+    /// <summary>Issues a locally-signed service-to-service token for <see cref="LocalServiceAccessTokenProvider"/>.</summary>
     public string IssueServiceToken(string clientId) =>
         CreateToken([
             new Claim(JwtRegisteredClaimNames.Sub, clientId),

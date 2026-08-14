@@ -1,9 +1,11 @@
 namespace AppointmentService.Infrastructure.Security;
 
 /// <summary>
-/// Settings for the locally-signed JWTs this service issues from <c>/auth/login</c> and
-/// <c>/auth/token</c>, and validates on every incoming request. Stands in for Keycloak (see
-/// README) until that exists — <see cref="SigningKey"/> must be at least 32 characters (HMAC-SHA256).
+/// Settings for the locally-signed JWTs this service falls back to outside Docker: from
+/// <c>/auth/login</c> (when no real Keycloak is expected to be reachable) and for the
+/// service-to-service token <see cref="LocalServiceAccessTokenProvider"/> issues. Also supplies
+/// <c>Authority</c>/<c>Issuer</c>/<c>Audience</c> for real Keycloak-backed validation in Docker
+/// (see README) — <see cref="SigningKey"/> itself must be at least 32 characters (HMAC-SHA256).
 /// </summary>
 public sealed class JwtOptions
 {

@@ -11,7 +11,7 @@ Four test projects, run with `dotnet test PetCarePlatform.slnx`:
 |---|---|
 | `AppointmentService.Domain.Tests` | `Appointment`/`AvailabilitySlot` status-transition and booking rules, `Clinic`/`Veterinarian` construction guards. Pure unit tests, no dependencies beyond Domain. |
 | `AppointmentService.Application.Tests` | Every command/query handler, with `IAppointmentRepository`/`IAvailabilitySlotRepository`/etc., `IPetVerificationClient`, and `IIntegrationEventPublisher` mocked (Moq). Covers the happy path, validation failures, domain exceptions (already-booked/expired slot, invalid status transition), and that a **failed Kafka publish doesn't fail an otherwise-successful booking/cancel/reschedule** — see `ScheduleAppointmentHandlerTests.HandleAsync_WhenEventPublishFails_StillReturnsTheBookedAppointment`. |
-| `AppointmentService.Api.IntegrationTests` | Boots the real API (`WebApplicationFactory<Program>`) — real controllers, real `[Authorize]`/role checks, real JWT login/validation, real domain rules — against an EF Core **InMemory** database and an in-memory `FakeIntegrationEventPublisher` instead of Postgres/Kafka, so the whole suite runs without Docker. Covers `/health`, `/auth/login` + `/auth/token`, 401/403 authorization checks, and a full schedule → reschedule → cancel lifecycle asserting both the HTTP responses **and** that each step published the right event (`AppointmentScheduledEvent`/`AppointmentRescheduledEvent`/`AppointmentCancelledEvent`) to `petcare.appointments`. |
+| `AppointmentService.Api.IntegrationTests` | Boots the real API (`WebApplicationFactory<Program>`) — real controllers, real `[Authorize]`/role checks, real JWT login/validation, real domain rules — against an EF Core **InMemory** database and an in-memory `FakeIntegrationEventPublisher` instead of Postgres/Kafka, so the whole suite runs without Docker or a live Keycloak. Covers `/health`, `/auth/login`, 401/403 authorization checks, and a full schedule → reschedule → cancel lifecycle asserting both the HTTP responses **and** that each step published the right event (`AppointmentScheduledEvent`/`AppointmentRescheduledEvent`/`AppointmentCancelledEvent`) to `petcare.appointments`. |
 | `tests/AppointmentService.PactTests` | Consumer-side Pact tests (PactNet v4) for the `GET /api/pets/{petId}/exists?ownerId={ownerId}` contract `PetServiceClient` depends on — exists/owned, exists/not-owned, and not-found. Regenerates `/pacts/Appointment Service-Pet Service.json` on every run, which is what Pet Service's own (not-yet-written) provider-verification tests would check against. |
 
 Notes on choices that might look surprising:
@@ -46,15 +46,25 @@ uncommented.
 
 ## Security and authorization
 
-Keycloak doesn't exist in this repo yet (Member 1's shared-infrastructure task), so this service
-issues and validates its **own** JWTs in the meantime — same shape/claims a real identity provider
-would produce, just backed by a fixed in-memory user/client list instead of a real store. Nothing
-downstream (`[Authorize]`, role checks, `ServiceAccessTokenHandler`) needs to change when Keycloak
-shows up — only the two places listed under "Swapping in Keycloak" below.
+Keycloak is now real (`infrastructure/keycloak/petcare-realm.json`, seeded by Member 1's
+shared-infrastructure work), and `Program.cs`'s `AddJwtBearer` validates against it whenever this
+service runs in the `Docker` environment (`options.Authority = Jwt:Authority`, real JWKS-based
+signature validation — no local secret involved). Outside Docker (plain `dotnet run`, or the
+integration tests' `WebApplicationFactory`), it falls back to a locally-signed symmetric-key token
+instead (`useLegacyDevelopmentTokens`), purely so development and CI don't need a live Keycloak
+container just to exercise `[Authorize]`.
 
-### Test users (`AppointmentService.Infrastructure/Security/TestUsers.cs`)
+`POST /auth/login` (`AuthController`) mirrors that exact same switch: outside Docker it issues a
+locally-signed token via `JwtTokenService`/`TestUsers` (fast, no network); in Docker it proxies the
+same username/password to Keycloak's real token endpoint via `KeycloakAuthClient` (Resource Owner
+Password Credentials grant, public `petcare-demo` client) and returns Keycloak's own signed token.
+Either way the response shape is the same — this service never makes up a token once Keycloak is
+actually reachable.
 
-One per role, as requested:
+### Test users
+
+One per role, seeded identically in both `TestUsers.cs` (local fallback) and Keycloak's realm
+import, using the same user ids on purpose:
 
 | Username | Password    | Role          | User id (JWT `sub`)                     |
 |----------|-------------|---------------|------------------------------------------|
@@ -63,7 +73,8 @@ One per role, as requested:
 | `admin1` | `Admin123!` | `admin`       | `55555555-5555-5555-5555-555555555553` |
 
 `owner1`/`vet1` deliberately reuse `AppointmentDbInitializer`'s demo ids, so logging in as
-`owner1` gives you a token for the same owner that already has a seeded appointment.
+`owner1` (locally or through real Keycloak) gives you a token for the same owner that already has
+a seeded appointment.
 
 ### Logging in (`POST /auth/login`) and calling the API from Swagger
 
@@ -79,8 +90,8 @@ One per role, as requested:
 ### Authorization rules
 
 - Every controller requires `[Authorize]` (any logged-in role) except `AuthController`
-  (`/auth/login`, `/auth/token` — `[AllowAnonymous]`, obviously) and the health check endpoints
-  (no `[Authorize]` metadata at all, since Consul's own health check hits `/health` unauthenticated).
+  (`/auth/login` — `[AllowAnonymous]`, obviously) and the health check endpoints (no `[Authorize]`
+  metadata at all, since Consul's own health check hits `/health` unauthenticated).
 - `POST /appointments`, `DELETE /appointments/{id}`, `PUT /appointments/{id}/reschedule` additionally
   require `[Authorize(Roles = "owner,admin")]` — a `veterinarian` token can browse everything but
   can't book/cancel/reschedule (try it in the `.http` file, look for the 403).
@@ -92,27 +103,13 @@ One per role, as requested:
 
 ### Service-to-service authentication
 
-`LocalServiceAccessTokenProvider` (`AppointmentService.Infrastructure/Security/`) replaces the old
-no-op `NullServiceAccessTokenProvider`: every outgoing call to Pet Service now carries a real,
-signed bearer token (role `service`, `client_id: appointment-service`), attached the same way as
-before via `ServiceAccessTokenHandler`. Pet Service doesn't validate it yet (it has no JWT bearer
-authentication wired up), so this doesn't do anything end-to-end yet — but this service's half of
-"authenticate correctly" is now real rather than sending no token at all.
-
-### Swapping in Keycloak later
-
-1. Point `AddJwtBearer`'s `TokenValidationParameters` (`Program.cs`) at Keycloak's issuer/JWKS
-   instead of the local symmetric key (`options.Authority = "http://keycloak:8080/realms/petcare"`
-   is normally enough — Keycloak's own metadata endpoint supplies the rest).
-2. Replace `LocalServiceAccessTokenProvider`'s registration in
-   `AppointmentService.Infrastructure/DependencyInjection.cs` with a real implementation that POSTs
-   `grant_type=client_credentials` to Keycloak's token endpoint and caches the result (see the
-   still-relevant steps under "Keycloak / client-credentials authentication" below, which predate
-   this section).
-3. `AuthController`, `JwtTokenService`, `TestUsers`, `TestClients` can all be deleted — real login
-   happens against Keycloak directly (or via the API Gateway), not this service.
-4. `[Authorize]`/`[Authorize(Roles = ...)]` on the controllers don't change at all — they just
-   start validating real tokens instead of local ones.
+`LocalServiceAccessTokenProvider` (`AppointmentService.Infrastructure/Security/`) attaches a
+locally-signed bearer token (role `service`, `client_id: appointment-service`) to every outgoing
+call to Pet Service, via `ServiceAccessTokenHandler`. This still hasn't been swapped for a real
+Keycloak client-credentials grant (`appointment-service` is a confidential client with
+`serviceAccountsEnabled: true` in the realm import, ready for this) — see "Keycloak /
+client-credentials authentication" below for what that replacement looks like. Pet Service also
+doesn't validate the bearer token it receives yet, so this remains a half-finished path end-to-end.
 
 ## Kafka integration events
 
@@ -167,9 +164,10 @@ docker exec -it petcare-kafka /opt/kafka/bin/kafka-console-consumer.sh \
 
 The Appointment Service calls the Pet Service over HTTP (`IPetVerificationClient` →
 `PetServiceClient`, in `AppointmentService.Infrastructure/Clients/`). Service-to-service calls
-like this one are supposed to carry an OAuth2 **client-credentials** access token, but there is
-no Keycloak (or any identity provider) running anywhere in this repo yet — that's Member 1's
-"Keycloak" shared-infrastructure task.
+like this one are supposed to carry an OAuth2 **client-credentials** access token. Keycloak itself
+now exists (`infrastructure/keycloak/petcare-realm.json`, with an `appointment-service`
+confidential client already set up for exactly this grant) — this call just hasn't been switched
+over to use it yet; see "What to do" below.
 
 **Update (section 9):** this no longer sends no token at all — see "Security and authorization"
 above. `LocalServiceAccessTokenProvider` now attaches a real, locally-signed token; Pet Service
@@ -211,9 +209,8 @@ just doesn't validate it yet. What's in place:
 5. The Pet Service (and any other service we call) needs to actually validate that token on its
    side too (JWT bearer authentication, audience/issuer checks) — that's a separate piece of work
    on each service that owns an endpoint we call.
-6. Also swap `AddJwtBearer`'s validation (`Program.cs`) and delete the local login/token
-   scaffolding — see "Swapping in Keycloak later" under "Security and authorization" above for the
-   full list.
+6. `AddJwtBearer`'s validation and `POST /auth/login` already switch to real Keycloak in Docker —
+   see "Security and authorization" above.
 
 ## Consul / service discovery
 
