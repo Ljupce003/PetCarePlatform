@@ -12,12 +12,17 @@ namespace AppointmentService.Api.IntegrationTests;
 
 /// <summary>
 /// Boots the real Api/Application/Infrastructure composition (real controllers, real
-/// [Authorize]/role checks, real JWT issuing and validation, real domain rules) against an EF
-/// Core InMemory database instead of Postgres, and swaps the Kafka publisher for an in-memory spy
-/// -- so the whole HTTP pipeline is exercised without needing Docker/Postgres/Kafka running.
-/// Pet-ownership verification uses FakePetVerificationClient automatically, the same way it does
-/// for local `dotnet run`, since this factory doesn't change the environment from "Development"
-/// (see appsettings.Development.json's PetService:UseFakeVerification).
+/// [Authorize]/role checks, real domain rules) against an EF Core InMemory database instead of
+/// Postgres, and swaps the Kafka publisher for an in-memory spy -- so the HTTP pipeline is
+/// exercised without needing Docker/Postgres/Kafka running. Pet-ownership verification uses
+/// FakePetVerificationClient automatically, the same way it does for local `dotnet run`, since
+/// this factory doesn't change the environment from "Development" (see
+/// appsettings.Development.json's PetService:UseFakeVerification).
+///
+/// JWT auth is the one dependency this can't fake away: both token validation (Program.cs) and
+/// <c>POST /auth/login</c> (AuthController) always go through the real Keycloak realm now, so
+/// <c>Jwt:Authority</c> (default: http://localhost:8080/realms/petcare) must be reachable for
+/// these tests to pass -- run `docker compose up keycloak` first.
 /// </summary>
 public sealed class AppointmentServiceApiFactory : WebApplicationFactory<Program>
 {
@@ -48,7 +53,7 @@ public sealed class AppointmentServiceApiFactory : WebApplicationFactory<Program
         });
     }
 
-    /// <summary>Logs in as one of TestUsers (owner1/vet1/admin1) and returns a client with the resulting token attached.</summary>
+    /// <summary>Logs in as one of the demo users (owner1/vet1/admin1) against real Keycloak and returns a client with the resulting token attached.</summary>
     public async Task<HttpClient> CreateAuthenticatedClientAsync(string username, string password)
     {
         var client = CreateClient();

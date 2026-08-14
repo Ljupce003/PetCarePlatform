@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text;
 using System.Text.Json;
 using AppointmentService.Api.Security;
 using Microsoft.AspNetCore.Authentication;
@@ -38,31 +37,24 @@ else
 
 builder.Services.AddControllers();
 
-// Local development and the existing tests retain the service's legacy token endpoints. Docker
-// validates the shared Keycloak realm instead, matching the Gateway and the other services.
+// Real Keycloak, always -- no locally-signed fallback for validating incoming tokens. Requires a
+// reachable Keycloak (Jwt:Authority) in every environment this runs in, including tests.
 var jwtSection = builder.Configuration.GetRequiredSection("Jwt");
 var jwtIssuer = jwtSection["Issuer"]
     ?? throw new InvalidOperationException("Jwt:Issuer is required.");
 var jwtAudience = jwtSection["Audience"]
     ?? throw new InvalidOperationException("Jwt:Audience is required.");
-var jwtSigningKey = jwtSection["SigningKey"];
-var useLegacyDevelopmentTokens = !builder.Environment.IsEnvironment("Docker") &&
-                                 !string.IsNullOrWhiteSpace(jwtSigningKey);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.MapInboundClaims = false;
-
-        if (!useLegacyDevelopmentTokens)
-        {
-            options.Authority = (jwtSection["Authority"]
-                ?? throw new InvalidOperationException("Jwt:Authority is required in Docker."))
-                .TrimEnd('/');
-            options.Audience = jwtAudience;
-            options.RequireHttpsMetadata = jwtSection.GetValue("RequireHttpsMetadata", true);
-        }
+        options.Authority = (jwtSection["Authority"]
+            ?? throw new InvalidOperationException("Jwt:Authority is required."))
+            .TrimEnd('/');
+        options.Audience = jwtAudience;
+        options.RequireHttpsMetadata = jwtSection.GetValue("RequireHttpsMetadata", true);
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -71,9 +63,6 @@ builder.Services
             ValidateAudience = true,
             ValidAudience = jwtAudience,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = useLegacyDevelopmentTokens
-                ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey!))
-                : null,
             ValidateLifetime = true,
             NameClaimType = "preferred_username",
             RoleClaimType = ClaimTypes.Role,

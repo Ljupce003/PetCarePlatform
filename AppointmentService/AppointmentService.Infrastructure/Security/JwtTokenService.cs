@@ -7,21 +7,14 @@ using Microsoft.IdentityModel.Tokens;
 namespace AppointmentService.Infrastructure.Security;
 
 /// <summary>
-/// Issues and (via <see cref="Options"/>, consumed by Program.cs's AddJwtBearer setup) validates
-/// this service's own JWTs. Everything about this class is a stand-in for a real identity
-/// provider — see the "Security and authorization" section of README for exactly what changes
-/// once Keycloak exists.
+/// Issues a locally-signed, HMAC-SHA256 JWT for <see cref="LocalServiceAccessTokenProvider"/>'s
+/// service-to-service calls to Pet Service. This is the one remaining local token issuer in the
+/// service — human login (<c>POST /auth/login</c>) goes through <see cref="KeycloakAuthClient"/>
+/// against the real Keycloak realm instead; see README's "Service-to-service authentication" for
+/// what replaces this once that call is switched to a real Keycloak client-credentials grant too.
 /// </summary>
 public sealed class JwtTokenService(IOptions<JwtOptions> options)
 {
-    /// <summary>Issues a token for a human user logged in via <c>POST /auth/login</c>.</summary>
-    public string IssueUserToken(Guid userId, string username, string role) =>
-        CreateToken([
-            new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
-            new Claim(JwtRegisteredClaimNames.UniqueName, username),
-            new Claim(ClaimTypes.Role, role)
-        ]);
-
     /// <summary>Issues a locally-signed service-to-service token for <see cref="LocalServiceAccessTokenProvider"/>.</summary>
     public string IssueServiceToken(string clientId) =>
         CreateToken([

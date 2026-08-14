@@ -11,27 +11,29 @@ Four test projects, run with `dotnet test PetCarePlatform.slnx`:
 |---|---|
 | `AppointmentService.Domain.Tests` | `Appointment`/`AvailabilitySlot` status-transition and booking rules, `Clinic`/`Veterinarian` construction guards. Pure unit tests, no dependencies beyond Domain. |
 | `AppointmentService.Application.Tests` | Every command/query handler, with `IAppointmentRepository`/`IAvailabilitySlotRepository`/etc., `IPetVerificationClient`, and `IIntegrationEventPublisher` mocked (Moq). Covers the happy path, validation failures, domain exceptions (already-booked/expired slot, invalid status transition), and that a **failed Kafka publish doesn't fail an otherwise-successful booking/cancel/reschedule** — see `ScheduleAppointmentHandlerTests.HandleAsync_WhenEventPublishFails_StillReturnsTheBookedAppointment`. |
-| `AppointmentService.Api.IntegrationTests` | Boots the real API (`WebApplicationFactory<Program>`) — real controllers, real `[Authorize]`/role checks, real JWT login/validation, real domain rules — against an EF Core **InMemory** database and an in-memory `FakeIntegrationEventPublisher` instead of Postgres/Kafka, so the whole suite runs without Docker or a live Keycloak. Covers `/health`, `/auth/login`, 401/403 authorization checks, and a full schedule → reschedule → cancel lifecycle asserting both the HTTP responses **and** that each step published the right event (`AppointmentScheduledEvent`/`AppointmentRescheduledEvent`/`AppointmentCancelledEvent`) to `petcare.appointments`. |
+| `AppointmentService.Api.IntegrationTests` | Boots the real API (`WebApplicationFactory<Program>`) — real controllers, real `[Authorize]`/role checks, real domain rules — against an EF Core **InMemory** database and an in-memory `FakeIntegrationEventPublisher` instead of Postgres/Kafka. JWT login/validation goes through a real Keycloak (**must be running** — `docker compose up keycloak`), so this project isn't fully Docker-free. Covers `/health`, `/auth/login`, 401/403 authorization checks, and a full schedule → reschedule → cancel lifecycle asserting both the HTTP responses **and** that each step published the right event (`AppointmentScheduledEvent`/`AppointmentRescheduledEvent`/`AppointmentCancelledEvent`) to `petcare.appointments`. |
 | `tests/AppointmentService.PactTests` | Consumer-side Pact tests (PactNet v4) for the `GET /api/pets/{petId}/exists?ownerId={ownerId}` contract `PetServiceClient` depends on — exists/owned, exists/not-owned, and not-found. Regenerates `/pacts/Appointment Service-Pet Service.json` on every run, which is what Pet Service's own (not-yet-written) provider-verification tests would check against. |
 
 Notes on choices that might look surprising:
 
-- **InMemory instead of Testcontainers/a real Postgres for integration tests.** Faster, no Docker
-  requirement for CI, and this project doesn't lean on Postgres-specific behavior (no raw SQL,
-  no database-level constraints the tests need to exercise) — the unique index on
-  `(VeterinarianId, StartsAtUtc)` is redundant with `AvailabilitySlot.Reserve()`'s own
-  double-booking guard, which the Application tests already cover directly. If that stops being
-  true later, swap `UseInMemoryDatabase` for a Testcontainers-backed Postgres in
-  `AppointmentServiceApiFactory`.
+- **InMemory instead of Testcontainers/a real Postgres for integration tests.** Faster, and this
+  project doesn't lean on Postgres-specific behavior (no raw SQL, no database-level constraints
+  the tests need to exercise) — the unique index on `(VeterinarianId, StartsAtUtc)` is redundant
+  with `AvailabilitySlot.Reserve()`'s own double-booking guard, which the Application tests
+  already cover directly. If that stops being true later, swap `UseInMemoryDatabase` for a
+  Testcontainers-backed Postgres in `AppointmentServiceApiFactory`. Note this only removes the
+  Postgres dependency — **Keycloak still has to be running** for JWT auth (see below), so these
+  tests are not fully Docker-free.
 - **`AppointmentDbInitializer.InitializeAsync`'s `Database.MigrateAsync()` doesn't run in tests**
   (the InMemory provider doesn't support it, and — separately — ASP.NET Core's test host factory
   intercepts `Program.cs` right after `Build()`, so the inline seeding block between `Build()` and
   `RunAsync()` never executes under `WebApplicationFactory` regardless). `AppointmentServiceApiFactory`
   registers its own `TestDataSeeder : IHostedService` that calls `Database.EnsureCreatedAsync()` +
   the newly-extracted `AppointmentDbInitializer.SeedIfEmptyAsync(...)` instead.
-- **Integration tests log in for real** (`POST /auth/login` against the running test instance)
-  rather than faking authentication — a direct payoff of section 9's JWTs being locally self-
-  issued and self-validated: no test-only auth handler needed.
+- **Integration tests log in for real** (`POST /auth/login` against the running test instance,
+  which itself proxies to a real Keycloak — see "Security and authorization" below) rather than
+  faking authentication: no test-only auth handler needed, at the cost of needing Keycloak up
+  before running this test project.
 - **`AppointmentWorkflowTests` gives every test its own fresh factory/database** (`IAsyncLifetime`,
   not `IClassFixture`) since those tests book/reschedule/cancel real slots and would otherwise
   collide with each other; the read-only test classes (`HealthEndpointTests`, `AuthTests`,
@@ -46,25 +48,20 @@ uncommented.
 
 ## Security and authorization
 
-Keycloak is now real (`infrastructure/keycloak/petcare-realm.json`, seeded by Member 1's
-shared-infrastructure work), and `Program.cs`'s `AddJwtBearer` validates against it whenever this
-service runs in the `Docker` environment (`options.Authority = Jwt:Authority`, real JWKS-based
-signature validation — no local secret involved). Outside Docker (plain `dotnet run`, or the
-integration tests' `WebApplicationFactory`), it falls back to a locally-signed symmetric-key token
-instead (`useLegacyDevelopmentTokens`), purely so development and CI don't need a live Keycloak
-container just to exercise `[Authorize]`.
-
-`POST /auth/login` (`AuthController`) mirrors that exact same switch: outside Docker it issues a
-locally-signed token via `JwtTokenService`/`TestUsers` (fast, no network); in Docker it proxies the
-same username/password to Keycloak's real token endpoint via `KeycloakAuthClient` (Resource Owner
-Password Credentials grant, public `petcare-demo` client) and returns Keycloak's own signed token.
-Either way the response shape is the same — this service never makes up a token once Keycloak is
-actually reachable.
+Keycloak is real (`infrastructure/keycloak/petcare-realm.json`, seeded by Member 1's
+shared-infrastructure work), and this service only ever trusts it — no locally-signed fallback for
+incoming tokens, in any environment. `Program.cs`'s `AddJwtBearer` always sets
+`options.Authority = Jwt:Authority` and validates against Keycloak's real JWKS/issuer, and
+`POST /auth/login` (`AuthController`) always proxies the given username/password straight to
+Keycloak's token endpoint via `KeycloakAuthClient` (Resource Owner Password Credentials grant,
+public `petcare-demo` client) and returns Keycloak's own signed token. There is no dev-only
+bypass — **Keycloak must be reachable (`docker compose up keycloak`) for this service to start up
+successfully or for any of the `AppointmentService.Api.IntegrationTests` to pass.**
 
 ### Test users
 
-One per role, seeded identically in both `TestUsers.cs` (local fallback) and Keycloak's realm
-import, using the same user ids on purpose:
+One per role, seeded in Keycloak's realm import (`infrastructure/keycloak/petcare-realm.json`),
+using ids that intentionally match this service's own seeded demo data:
 
 | Username | Password    | Role          | User id (JWT `sub`)                     |
 |----------|-------------|---------------|------------------------------------------|

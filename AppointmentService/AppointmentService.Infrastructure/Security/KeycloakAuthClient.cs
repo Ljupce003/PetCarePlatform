@@ -6,12 +6,11 @@ using System.Text.Json.Serialization;
 namespace AppointmentService.Infrastructure.Security;
 
 /// <summary>
-/// Real login path, used whenever this service isn't running in the local/test "legacy" JWT mode
-/// (see <c>AuthController.Login</c> and the identical <c>useLegacyDevelopmentTokens</c> check in
-/// Program.cs). Proxies a username/password to Keycloak's own token endpoint via the Resource Owner
-/// Password Credentials grant, using the public <c>petcare-demo</c> client (public, no secret,
+/// The only login path <see cref="AuthController"/> has — no locally-issued fallback. Proxies a
+/// username/password to Keycloak's own token endpoint via the Resource Owner Password Credentials
+/// grant, using the public <c>petcare-demo</c> client (public, no secret,
 /// <c>directAccessGrantsEnabled: true</c> — see infrastructure/keycloak/petcare-realm.json), so a
-/// Swagger user gets a genuine Keycloak-signed token instead of one this service made up.
+/// Swagger user always gets a genuine Keycloak-signed token.
 /// </summary>
 public sealed class KeycloakAuthClient(HttpClient httpClient)
 {

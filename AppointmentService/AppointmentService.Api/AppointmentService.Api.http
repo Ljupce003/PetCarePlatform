@@ -24,12 +24,12 @@ GET {{AppointmentService_HostAddress}}/openapi/v1.json
 # DemoPetId             44444444-4444-4444-4444-444444444444
 
 
-### ===== Auth (section 9) — everything below needs a token; see TestUsers =====
+### ===== Auth (section 9) — everything below needs a token =====
 ### owner1 / Owner123!       -> role "owner"        (user id = DemoOwnerId, see above)
 ### vet1   / Vet123!         -> role "veterinarian"  (user id = DemoVeterinarianId, see above)
 ### admin1 / Admin123!       -> role "admin"
-### Outside Docker these hit the locally-signed fallback (TestUsers); in Docker /auth/login
-### proxies these same credentials to the real Keycloak realm instead (see AuthController).
+### /auth/login proxies these credentials straight to the real Keycloak realm (see
+### AuthController/KeycloakAuthClient) — Keycloak must be reachable (docker compose up keycloak).
 
 ### Log in as the owner. Capture the token so the requests below can reuse it automatically.
 POST {{AppointmentService_HostAddress}}/auth/login
