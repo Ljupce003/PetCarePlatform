@@ -34,8 +34,23 @@ public sealed class AppointmentServiceApiFactory : WebApplicationFactory<Program
     {
         builder.ConfigureServices(services =>
         {
+            // Program.cs's own AddDbContext<AppointmentDbContext>(UseNpgsql) already ran by this
+            // point and left Npgsql's provider services in this same IServiceCollection --
+            // RemoveAll<DbContextOptions<...>>() only removes the *options* registration, not
+            // those provider services, so EF's shared internal service provider ends up seeing
+            // both Npgsql's and InMemory's IDatabaseProvider side by side and refuses to pick one
+            // ("Only a single database provider can be registered..."). Giving the InMemory
+            // registration its own dedicated internal service provider sidesteps the shared
+            // collection entirely instead of trying to unregister Npgsql's leftovers.
             services.RemoveAll<DbContextOptions<AppointmentDbContext>>();
-            services.AddDbContext<AppointmentDbContext>(options => options.UseInMemoryDatabase(_databaseName));
+            var inMemoryProvider = new ServiceCollection()
+                .AddEntityFrameworkInMemoryDatabase()
+                .BuildServiceProvider();
+            services.AddDbContext<AppointmentDbContext>(options =>
+            {
+                options.UseInMemoryDatabase(_databaseName);
+                options.UseInternalServiceProvider(inMemoryProvider);
+            });
 
             services.RemoveAll<IIntegrationEventPublisher>();
             services.AddSingleton<FakeIntegrationEventPublisher>();
