@@ -1,5 +1,8 @@
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using AppointmentService.Api.Security;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
@@ -36,29 +39,49 @@ else
 
 builder.Services.AddControllers();
 
-// Validates the JWTs this same service issues from /auth/login and /auth/token -- a stand-in for
-// validating tokens from Keycloak until that exists (see README's "Security and authorization").
-var jwtSection = builder.Configuration.GetSection("Jwt");
-var jwtSigningKey = jwtSection["SigningKey"]
-    ?? throw new InvalidOperationException(
-        "Jwt:SigningKey is not configured. Set Jwt:SigningKey in appsettings or the Jwt__SigningKey environment variable.");
+// Local development and the existing tests retain the service's legacy token endpoints. Docker
+// validates the shared Keycloak realm instead, matching the Gateway and the other services.
+var jwtSection = builder.Configuration.GetRequiredSection("Jwt");
+var jwtIssuer = jwtSection["Issuer"]
+    ?? throw new InvalidOperationException("Jwt:Issuer is required.");
+var jwtAudience = jwtSection["Audience"]
+    ?? throw new InvalidOperationException("Jwt:Audience is required.");
+var jwtSigningKey = jwtSection["SigningKey"];
+var useLegacyDevelopmentTokens = !builder.Environment.IsEnvironment("Docker") &&
+                                 !string.IsNullOrWhiteSpace(jwtSigningKey);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
+
+        if (!useLegacyDevelopmentTokens)
+        {
+            options.Authority = (jwtSection["Authority"]
+                ?? throw new InvalidOperationException("Jwt:Authority is required in Docker."))
+                .TrimEnd('/');
+            options.Audience = jwtAudience;
+            options.RequireHttpsMetadata = jwtSection.GetValue("RequireHttpsMetadata", true);
+        }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = jwtSection["Issuer"],
+            ValidIssuer = jwtIssuer,
             ValidateAudience = true,
-            ValidAudience = jwtSection["Audience"],
+            ValidAudience = jwtAudience,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey)),
+            IssuerSigningKey = useLegacyDevelopmentTokens
+                ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey!))
+                : null,
             ValidateLifetime = true,
+            NameClaimType = "preferred_username",
+            RoleClaimType = ClaimTypes.Role,
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
+builder.Services.AddTransient<IClaimsTransformation, KeycloakRoleClaimsTransformation>();
 builder.Services.AddAuthorization();
 
 builder.Services.AddOpenApi(options =>

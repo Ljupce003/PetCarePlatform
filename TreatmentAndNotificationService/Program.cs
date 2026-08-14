@@ -1,10 +1,13 @@
+using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Converters;
 using TreatmentAndNotificationService.API.ExceptionHandling;
 using TreatmentAndNotificationService.API.OpenApi;
+using TreatmentAndNotificationService.API.Security;
 using TreatmentAndNotificationService.Application;
 using TreatmentAndNotificationService.Application.Services;
 using TreatmentAndNotificationService.Application.Services.Impl;
@@ -25,30 +28,47 @@ builder.Services.AddControllers().AddNewtonsoftJson(options =>
     options.SerializerSettings.Converters.Add(new StringEnumConverter()));
 builder.Services.AddHealthChecks();
 
-// Appointment Service temporarily acts as the local token issuer until the shared Keycloak realm
-// exists. Treatment Service validates the same issuer, audience, signing key, lifetime, and role
-// claims, so both human and client-credentials tokens work consistently across service boundaries.
-var jwtSection = builder.Configuration.GetSection("Jwt");
-var jwtSigningKey = jwtSection["SigningKey"]
-    ?? throw new InvalidOperationException(
-        "Jwt:SigningKey is not configured. Set Jwt:SigningKey or Jwt__SigningKey.");
+var jwtSection = builder.Configuration.GetRequiredSection("Jwt");
+var jwtIssuer = jwtSection["Issuer"]
+    ?? throw new InvalidOperationException("Jwt:Issuer is required.");
+var jwtAudience = jwtSection["Audience"]
+    ?? throw new InvalidOperationException("Jwt:Audience is required.");
+var jwtSigningKey = jwtSection["SigningKey"];
+var useLegacyDevelopmentTokens = !builder.Environment.IsEnvironment("Docker") &&
+                                 !string.IsNullOrWhiteSpace(jwtSigningKey);
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
+
+        if (!useLegacyDevelopmentTokens)
+        {
+            options.Authority = (jwtSection["Authority"]
+                ?? throw new InvalidOperationException("Jwt:Authority is required in Docker."))
+                .TrimEnd('/');
+            options.Audience = jwtAudience;
+            options.RequireHttpsMetadata = jwtSection.GetValue("RequireHttpsMetadata", true);
+        }
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = jwtSection["Issuer"],
+            ValidIssuer = jwtIssuer,
             ValidateAudience = true,
-            ValidAudience = jwtSection["Audience"],
+            ValidAudience = jwtAudience,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey)),
+            IssuerSigningKey = useLegacyDevelopmentTokens
+                ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey!))
+                : null,
             ValidateLifetime = true,
+            NameClaimType = "preferred_username",
+            RoleClaimType = ClaimTypes.Role,
             ClockSkew = TimeSpan.FromSeconds(30)
         };
     });
+builder.Services.AddTransient<IClaimsTransformation, KeycloakRoleClaimsTransformation>();
 builder.Services.AddAuthorization();
 
 var connectionString = builder.Configuration.GetConnectionString("Database")

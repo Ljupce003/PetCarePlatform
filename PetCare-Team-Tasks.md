@@ -158,10 +158,10 @@ The main idea is:
 
 Implement Pet-related MCP tools.
 
-* [ ] Define MCP contract for Pet tools
-* [ ] Implement `GetPet`
-* [ ] Implement `GetOwnerPets`
-* [ ] Test MCP tool responses
+* [x] Define MCP contract for Pet tools
+* [x] Implement `GetPet`
+* [x] Implement `GetOwnerPets`
+* [x] Test MCP tool responses
 
 ### 8. Testing
 
@@ -294,10 +294,10 @@ Implement Pet-related MCP tools.
 
 Implement Appointment-related MCP tools.
 
-* [ ] Define MCP contract for Appointment tools
-* [ ] Implement `FindAvailableVeterinarians`
-* [ ] Implement `GetUpcomingAppointments`
-* [ ] Test MCP tool responses
+* [x] Define MCP contract for Appointment tools
+* [x] Implement `FindAvailableVeterinarians`
+* [x] Implement `GetUpcomingAppointments`
+* [x] Test MCP tool responses
 
 
 ### 10. Testing
@@ -409,14 +409,14 @@ Implement Appointment-related MCP tools.
 
 Own the shared MCP server.
 
-* [ ] Create MCP Server project
-* [ ] Configure MCP SDK
-* [ ] Configure Streamable HTTP transport
-* [ ] Configure dependency injection
-* [ ] Configure service authentication
-* [ ] Configure API Gateway integration
-* [ ] Register all MCP tools
-* [ ] Test MCP server with Inspector
+* [x] Create MCP Server project
+* [x] Configure MCP SDK
+* [x] Configure Streamable HTTP transport
+* [x] Configure dependency injection
+* [x] Configure service authentication
+* [x] Configure API Gateway integration
+* [x] Register all MCP tools
+* [x] Test MCP server with Inspector
 
 > **Note:** The implementations of the service-specific tools (`GetPet`, `FindAvailableVeterinarians`, etc.) are contributed by the respective service owners. Member 3 is responsible for the MCP server infrastructure and integrating those tools into the server.
 
@@ -433,7 +433,7 @@ Own the shared MCP server.
 * [ ] Unit tests
 * [ ] Kafka integration tests
 * [ ] Worker tests
-* [ ] MCP Inspector tests
+* [x] MCP Inspector tests
 * [ ] Health tests
 
 ---
@@ -463,8 +463,8 @@ Own the shared MCP server.
 * [ ] Consul
 * [x] Keycloak
 * [ ] Three microservices
-* [ ] MCP Server
-* [ ] API Gateway
+* [x] MCP Server
+* [x] API Gateway
 
 ### Consul
 
@@ -477,10 +477,10 @@ Own the shared MCP server.
 
 ### API Gateway (YARP)
 
-* [ ] Route configuration
-* [ ] Authentication forwarding
+* [x] Route configuration
+* [x] Authentication forwarding
 * [ ] Service discovery integration
-* [ ] MCP endpoint routing
+* [x] MCP endpoint routing
 
 ---
 
@@ -500,7 +500,7 @@ Own the shared MCP server.
 * [ ] Verify REST communication
 * [ ] Verify Kafka messaging
 * [ ] Verify authentication
-* [ ] Verify MCP tools end-to-end
+* [x] Verify MCP tools end-to-end
 * [ ] Run end-to-end demo
 * [ ] Fix integration issues
 * [ ] Prepare presentation
