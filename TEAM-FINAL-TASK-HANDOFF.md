@@ -22,14 +22,14 @@ Status:
 
 ### Remaining Member 1 work
 
-- [ ] Register Pet Service in Consul with its `/health` check.
-- [ ] Confirm the final pet-verification contract with Member 2. The implemented Pet route is `/pets/{id}/exists`; Appointment currently calls `/api/pets/{id}/exists`, so both sides and the Pact must use one identical path.
-- [ ] Add Pet Service domain unit tests.
-- [ ] Add Pet Service API/integration tests for main success, validation, authentication, authorization, not-found, and health cases.
-- [ ] Add the Pet provider-side Pact verification test for the Appointment consumer Pact.
+- [x] Register Pet Service in Consul with its `/health` check.
+- [x] Make Pet verification compatible with both `GET /pets/{id}/exists` and Appointment's existing `GET /api/pets/{id}/exists`, returning `{ exists, ownedByOwner }`.
+- [x] Add Pet Service domain unit tests.
+- [x] Add Pet Service API/integration tests for main success, validation, authentication, authorization, not-found, and health cases.
+- [x] Add the Pet provider-side Pact verification test for the Appointment consumer Pact.
 - [ ] Re-test `get_pet` and `get_owner_pets` through the real MCP server and Gateway after final integration changes.
-- [ ] Write a short Pet Service section for the specification: bounded context, aggregates/value objects, database ownership, endpoints, authorization, and the verification contract.
-- [ ] Prepare a 30–45 second explanation of Pet Service for the final video.
+- [x] Write a short Pet Service section for the specification: bounded context, aggregates/value objects, database ownership, endpoints, authorization, and the verification contract.
+- [x] Prepare a 30–45 second explanation of Pet Service for the final video.
 
 ## Member 2 — Appointment Service owner
 
@@ -48,7 +48,7 @@ Status:
 
 ### Remaining Member 2 work
 
-- [ ] Fix Appointment → Pet verification to call the actual Pet route. Replace `/api/pets/{id}/exists` with the agreed canonical route, currently `/pets/{id}/exists`, and update the Pact interaction to match.
+- [x] Route compatibility is resolved without an Appointment source change: Pet now supports the existing Appointment/Pact route `/api/pets/{id}/exists` as well as its canonical `/pets/{id}/exists` route.
 - [ ] Disable `PetService:UseFakeVerification` in Docker Compose and prove that appointment creation uses the real Pet Service.
 - [ ] Replace `LocalServiceAccessTokenProvider` with a real Keycloak client-credentials token provider. Cache the access token until shortly before expiry and attach it through `ServiceAccessTokenHandler`.
 - [ ] Add `ServiceDiscoveryHandler` to the Pet `HttpClient` so Pet Service is resolved through Consul instead of only through a fixed Docker address.
@@ -107,7 +107,7 @@ The console notification sender is the final delivery mechanism for this course 
 
 ### 1. Cross-service integration — highest priority
 
-- [ ] Agree on and use one Pet verification route in Pet Service, Appointment Service, and Pact tests.
+- [x] Use `/api/pets/{id}/exists` for the existing Appointment/Pact integration; Pet also retains `/pets/{id}/exists` as its canonical route.
 - [ ] Register Pet Service in Consul and make Appointment resolve it using Consul.
 - [ ] Configure a real Keycloak client-credentials flow for Appointment → Pet.
 - [ ] Remove the fake Pet verification setting from Docker Compose.
@@ -119,8 +119,8 @@ The console notification sender is the final delivery mechanism for this course 
 ### 2. Automated quality checks
 
 - [ ] Make the entire solution test run green. The 14 August 2026 full run produced **201 passed and 23 failed**; every failure is in Appointment API integration tests because their test host registers Npgsql and EF InMemory together.
-- [ ] Add the missing Pet Service test projects and coverage.
-- [ ] Complete both sides of the consumer-driven contract: Appointment consumer Pact and Pet provider verification.
+- [x] Add the missing Pet Service test projects and coverage.
+- [x] Complete both sides of the consumer-driven contract: Appointment consumer Pact and Pet provider verification.
 - [ ] Keep Gateway, Treatment, MCP, Treatment Pact, Appointment domain/application, and Appointment Pact tests green.
 - [ ] Save the final test commands and expected results in the root README.
 
@@ -168,7 +168,7 @@ The console notification sender is the final delivery mechanism for this course 
 ## Recommended execution order
 
 1. Member 1 registers Pet Service in Consul and starts Pet tests/provider Pact work.
-2. Member 2 fixes the Pet path, real Keycloak client credentials, Consul resolution, and the 23 failing tests.
+2. Member 2 implements real Keycloak client credentials, Consul resolution, disables fake verification, and fixes the 23 failing tests.
 3. Members 1 and 2 prove real Appointment → Pet communication and both sides of the Pact.
 4. Member 3 and Member 2 prove the real Kafka producer → consumer → console notification flow.
 5. Run the full system and all test suites until green.
