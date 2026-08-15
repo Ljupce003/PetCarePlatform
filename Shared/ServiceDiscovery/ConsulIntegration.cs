@@ -104,7 +104,7 @@ public sealed class ConsulRegistrationHostedService(
             ID = registration.Id,
             Address = registration.Address,
             Port = registration.Port,
-            Tags = new[] { "petcare", "dotnet10", "appointment" },
+            Tags = new[] { "petcare", "dotnet10", registration.Name },
             Check = new
             {
                 HTTP = $"http://{registration.Address}:{registration.Port}/health",

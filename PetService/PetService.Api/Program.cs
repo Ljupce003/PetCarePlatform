@@ -141,3 +141,6 @@ static Task WriteHealthResponseAsync(HttpContext context, HealthReport report)
         })
     });
 }
+
+// Required by WebApplicationFactory in the Pet Service integration and provider Pact tests.
+public partial class Program;

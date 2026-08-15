@@ -9,6 +9,7 @@
     <ItemGroup>
         <ProjectReference Include="..\PetService.Application\PetService.Application.csproj"/>
         <ProjectReference Include="..\PetService.Domain\PetService.Domain.csproj"/>
+        <ProjectReference Include="..\..\Shared\Shared.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
