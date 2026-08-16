@@ -1,9 +1,11 @@
 # Build context is the repository root, so the other layers can be restored too.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+
 # Npgsql probes for GSSAPI on connect; without this library it logs a load error on every start.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
     && rm -rf /var/lib/apt/lists/*
+
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080
@@ -17,11 +19,19 @@ COPY ["PetService/PetService.Domain/PetService.Domain.csproj", "PetService/PetSe
 COPY ["PetService/PetService.Application/PetService.Application.csproj", "PetService/PetService.Application/"]
 COPY ["PetService/PetService.Infrastructure/PetService.Infrastructure.csproj", "PetService/PetService.Infrastructure/"]
 COPY ["PetService/PetService.Api/PetService.Api.csproj", "PetService/PetService.Api/"]
+COPY ["Shared/Shared.csproj", "Shared/"]
+
 RUN dotnet restore "PetService/PetService.Api/PetService.Api.csproj"
 
 COPY . .
+
 WORKDIR "/src/PetService/PetService.Api"
-RUN dotnet publish "./PetService.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false --no-restore
+
+RUN dotnet publish "./PetService.Api.csproj" \
+    -c $BUILD_CONFIGURATION \
+    -o /app/publish \
+    /p:UseAppHost=false \
+    --no-restore
 
 FROM base AS final
 WORKDIR /app
