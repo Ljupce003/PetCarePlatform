@@ -19,6 +19,9 @@
         <!-- Serves the Swagger UI over the OpenAPI document produced by Microsoft.AspNetCore.OpenApi. -->
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10"/>
+        <!-- Keep the IdentityModel graph aligned with the 8.20.0 token packages used by Infrastructure. -->
+        <PackageReference Include="Microsoft.IdentityModel.Protocols" Version="8.20.0" />
+        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.20.0" />
         <!-- The EF Core Tools (dotnet ef migrations ...) need this on the startup project, not
              just on Infrastructure where the DbContext actually lives. -->
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">

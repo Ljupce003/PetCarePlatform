@@ -2,10 +2,9 @@ namespace AppointmentService.Infrastructure.Security;
 
 /// <summary>
 /// Settings for real Keycloak-backed token validation (<c>Authority</c>/<c>Issuer</c>/
-/// <c>Audience</c>, see README's "Security and authorization"), plus the one remaining
-/// locally-signed JWT this service still issues: the service-to-service token
-/// <see cref="LocalServiceAccessTokenProvider"/> hands out for calls to Pet Service
-/// (<see cref="SigningKey"/> must be at least 32 characters, HMAC-SHA256).
+/// <c>Audience</c>, see README's "Security and authorization"), plus the locally-signed test-user
+/// JWT used only by the integration-test authentication path. <see cref="SigningKey"/> must be at
+/// least 32 characters for that HMAC-SHA256 test token.
 /// </summary>
 public sealed class JwtOptions
 {

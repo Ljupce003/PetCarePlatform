@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using AppointmentService.Application;
 using AppointmentService.Application.Abstractions;
 using AppointmentService.Infrastructure.Clients;
@@ -36,9 +37,8 @@ public static class DependencyInjection
         services.AddScoped<IAvailabilitySlotRepository, AvailabilitySlotRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
-        // JwtTokenService issues the locally-signed service-to-service token
-        // LocalServiceAccessTokenProvider (below) hands out for calls to Pet Service. Human login
-        // (POST /auth/login) doesn't use this at all -- see KeycloakAuthClient. See Security/JwtOptions.cs.
+        // JwtTokenService remains available only for the WebApplicationFactory "Testing"
+        // environment. Real users and service-to-service calls use Keycloak.
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.AddSingleton<JwtTokenService>();
 
@@ -51,11 +51,11 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(10);
         });
 
-        AddPetServiceClient(services, configuration);
-
         // Registers this instance in Consul on startup (deregisters on shutdown) and exposes
-        // IConsulServiceResolver for looking up other services once they register too.
+        // IConsulServiceResolver for the Pet Service client below.
         services.AddPetCareConsul(configuration);
+
+        AddPetServiceClient(services, configuration);
 
         // Publishes AppointmentScheduled/Cancelled/Rescheduled to Kafka (topic: petcare.appointments)
         // so Treatment & Notification Service can react to them.
@@ -67,11 +67,8 @@ public static class DependencyInjection
 
     private static void AddPetServiceClient(IServiceCollection services, IConfiguration configuration)
     {
-        // Pet Service doesn't have its /api/pets/{id}/exists endpoint (or any seeded pets/owners)
-        // yet, so booking through this service's own Swagger would otherwise always fail
-        // verification. PetService:UseFakeVerification (true in appsettings.Development.json,
-        // false everywhere else) swaps in FakePetVerificationClient instead -- delete this switch
-        // once Pet Service's real endpoint exists.
+        // Explicit opt-in for isolated Appointment development and tests where Pet Service is not
+        // running. Docker and integrated environments use the real Pet ownership contract.
         if (bool.TryParse(configuration["PetService:UseFakeVerification"], out var useFakeVerification) && useFakeVerification)
         {
             services.AddSingleton<IPetVerificationClient, FakePetVerificationClient>();
@@ -83,9 +80,36 @@ public static class DependencyInjection
                 "PetService:BaseUrl is not configured. Set PetService:BaseUrl in appsettings or the " +
                 "PetService__BaseUrl environment variable.");
 
-        // Attaches a real (locally-signed) token to every Pet Service call — see
-        // LocalServiceAccessTokenProvider for what changes once Keycloak exists.
-        services.AddSingleton<IServiceAccessTokenProvider, LocalServiceAccessTokenProvider>();
+        var keycloakAuthority = configuration["Jwt:Authority"]?.TrimEnd('/')
+            ?? throw new InvalidOperationException("Jwt:Authority is required for service-to-service authentication.");
+        var keycloakIssuer = configuration["Jwt:Issuer"]
+            ?? throw new InvalidOperationException("Jwt:Issuer is required for service-to-service authentication.");
+        var clientId = configuration["Jwt:ClientId"]
+            ?? throw new InvalidOperationException("Jwt:ClientId is required for service-to-service authentication.");
+        var clientSecret = configuration["Jwt:ClientSecret"]
+            ?? throw new InvalidOperationException("Jwt:ClientSecret is required for service-to-service authentication.");
+
+        services.AddOptions<KeycloakServiceAccessTokenOptions>()
+            .Configure(options =>
+            {
+                options.ClientId = clientId;
+                options.ClientSecret = clientSecret;
+                options.RefreshSkewSeconds = configuration.GetValue("Jwt:ServiceTokenRefreshSkewSeconds", 30);
+            })
+            .Validate(options => !string.IsNullOrWhiteSpace(options.ClientId), "A Keycloak service client ID is required.")
+            .Validate(options => !string.IsNullOrWhiteSpace(options.ClientSecret), "A Keycloak service client secret is required.")
+            .ValidateOnStart();
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddHttpClient("keycloak-service-token", client =>
+        {
+            client.BaseAddress = new Uri(keycloakAuthority + "/");
+            // Docker reaches Keycloak through its internal DNS name, while tokens intentionally
+            // use the browser-visible localhost issuer validated by every API.
+            client.DefaultRequestHeaders.Host = new Uri(keycloakIssuer).Authority;
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+        services.AddSingleton<IServiceAccessTokenProvider, KeycloakServiceAccessTokenProvider>();
         services.AddTransient<ServiceAccessTokenHandler>();
 
         services.AddHttpClient<IPetVerificationClient, PetServiceClient>(client =>
@@ -93,6 +117,7 @@ public static class DependencyInjection
                 client.BaseAddress = new Uri(petServiceBaseUrl);
             })
             .AddHttpMessageHandler<ServiceAccessTokenHandler>()
+            .AddHttpMessageHandler<ServiceDiscoveryHandler>()
             // Retry with backoff + circuit breaker + timeout for transient Pet Service failures,
             // instead of a single hand-rolled retry loop.
             .AddStandardResilienceHandler();

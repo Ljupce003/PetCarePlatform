@@ -10,15 +10,16 @@ This is the prepared Member 3 contribution for the final five-minute team video.
 >
 > A second hosted worker checks due notifications every fifteen seconds. For this course demonstration, delivery is a structured console log. Successful notifications become Sent and individual failures become Failed. E-mail and SMS are deliberately outside our scope because they add external-provider setup but do not demonstrate another required architecture concept.
 >
-> The YARP Gateway validates Keycloak tokens and routes Treatment and MCP requests. The MCP server exposes five Treatment tools and calls the Treatment REST API instead of accessing its database. It forwards the user's bearer token, so the Treatment service still makes the final authorization decision. We tested this with GitHub Copilot and with automated end-to-end tests.
+> The YARP Gateway validates Keycloak tokens and routes both REST and MCP requests. The shared MCP server exposes thirteen Pet, Appointment, Treatment, and vaccination tools. It never accesses a service database directly: each tool calls the owning service's REST API and forwards the user's bearer token, so each service still makes the final authorization decision. In the architecture it is the AI-facing adapter over the existing service boundaries. We tested it through the Streamlit MCP playground, the terminal verification script, and automated protocol and end-to-end tests.
 
 ## On-screen demonstration
 
 1. Show the architecture diagram and point to Appointment → Kafka → Treatment and Client → Gateway → MCP → Treatment.
-2. Run `./scripts/verify-gateway-treatment-mcp.sh` and show its three `PASS` lines.
-3. Run `./scripts/verify-treatment-notification-worker.sh`, then briefly show `docker compose logs -f treatment-and-notification-service` for its console delivery.
-4. In GitHub Copilot, call `get_medical_history` for a demo pet and show the returned Treatment data.
-5. If time permits, show that an owner write returns `403` while a veterinarian write succeeds.
+2. Open [the Streamlit demo](http://localhost:8501), select **MCP playground**, initialize MCP, list the thirteen tools, and call `get_medical_history` or `get_owner_pets`.
+3. Point out the displayed path: Streamlit → Gateway `/mcp` → MCP Server → owning REST service. This shows both how MCP communicates and its role in the architecture.
+4. Run `./scripts/verify-gateway-treatment-mcp.sh` and show its three `PASS` lines as terminal-test evidence.
+5. Run `./scripts/verify-treatment-notification-worker.sh`, then briefly show `docker compose logs -f treatment-and-notification-service` for its console delivery.
+6. If time permits, show that an owner write returns `403` while a veterinarian write succeeds.
 
 ## Important implementation points if asked
 

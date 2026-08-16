@@ -49,15 +49,15 @@ Status:
 ### Remaining Member 2 work
 
 - [x] Route compatibility is resolved without an Appointment source change: Pet now supports the existing Appointment/Pact route `/api/pets/{id}/exists` as well as its canonical `/pets/{id}/exists` route.
-- [ ] Disable `PetService:UseFakeVerification` in Docker Compose and prove that appointment creation uses the real Pet Service.
-- [ ] Replace `LocalServiceAccessTokenProvider` with a real Keycloak client-credentials token provider. Cache the access token until shortly before expiry and attach it through `ServiceAccessTokenHandler`.
-- [ ] Add `ServiceDiscoveryHandler` to the Pet `HttpClient` so Pet Service is resolved through Consul instead of only through a fixed Docker address.
-- [ ] Coordinate the Keycloak confidential service client, secret, service role, and Pet Service authorization policy with the team.
-- [ ] Fix all 23 failing Appointment API integration tests. The current factory registers both Npgsql and EF InMemory providers; remove the production EF registrations before adding the test provider, or use PostgreSQL Testcontainers.
-- [ ] Remove the mixed `Microsoft.IdentityModel.*` version warnings by aligning package versions.
-- [ ] Run the Appointment API, domain, application, and consumer Pact suites and confirm that all are green.
+- [x] Disable `PetService:UseFakeVerification` in Docker Compose and prove that appointment creation uses the real Pet Service.
+- [x] Replace the local token stand-in with a real cached Keycloak client-credentials token provider attached through `ServiceAccessTokenHandler`.
+- [x] Add `ServiceDiscoveryHandler` to the Pet `HttpClient` so healthy Pet instances are resolved through Consul.
+- [x] Configure the Keycloak confidential service client, secret, service role, and Pet Service authorization policy.
+- [x] Fix the Appointment API integration suite; all 23 tests pass.
+- [x] Remove the mixed `Microsoft.IdentityModel.*` version warnings by aligning package versions.
+- [x] Run the Appointment API, domain, application, and consumer Pact suites and confirm that all are green.
 - [ ] Verify real Kafka event publication for schedule, cancel, and reschedule operations.
-- [ ] Re-test Appointment MCP tools through the real MCP server and Gateway.
+- [x] Re-test Appointment MCP tools through the real MCP server and Gateway, including the Streamlit client.
 - [ ] Write the Appointment Service section for the specification: domain rules, Pet ACL, Consul discovery, Keycloak client credentials, Kafka envelope, and API.
 - [ ] Prepare a 30–45 second explanation of Appointment Service for the final video.
 
@@ -74,7 +74,7 @@ Status:
 - [x] Notification background worker, scheduler, and demo console sender.
 - [x] Keycloak JWT authentication and veterinarian/admin authorization.
 - [x] Treatment domain tests, API integration tests, Kafka processing tests, health tests, and Pact tests.
-- [x] Shared MCP server, Streamable HTTP transport, authentication, all nine registered tools, and integration tests.
+- [x] Shared MCP server, Streamable HTTP transport, authentication, all 13 registered tools, and integration tests.
 - [x] Treatment MCP tools, including read and record operations.
 - [x] YARP API Gateway routes, token forwarding, security behavior, MCP routing, and 30 Gateway tests.
 - [x] Real Keycloak → Gateway → Treatment and Keycloak → Gateway → MCP → Treatment flows.

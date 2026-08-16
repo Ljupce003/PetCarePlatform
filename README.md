@@ -6,7 +6,7 @@ PetCare Platform е систем за управување со домашни �
 
 ## 2. Архитектура
 
-Решението е microservice monorepo изработено со ASP.NET Core Web API и .NET 10. Секој бизнис сервис има Domain, Application, Infrastructure и API слој. Сервисите немаат директни project references еден кон друг и не пристапуваат до туѓа база. Клиентските барања влегуваат преку YARP API Gateway. Keycloak издава OAuth 2.0/OIDC JWT токени, Consul служи како service registry, а Kafka пренесува integration events. MCP серверот ги изложува главните read-only сценарија како AI алатки.
+Решението е microservice monorepo изработено со ASP.NET Core Web API и .NET 10. Секој бизнис сервис има Domain, Application, Infrastructure и API слој. Сервисите немаат директни project references еден кон друг и не пристапуваат до туѓа база. Клиентските барања влегуваат преку YARP API Gateway. Keycloak издава OAuth 2.0/OIDC JWT токени, Consul служи како service registry, а Kafka пренесува integration events. MCP серверот ги изложува избраните read и write сценарија како AI алатки, со истата downstream авторизација како REST API-јата.
 
 ## 3. Domain-Driven Design
 
@@ -62,12 +62,29 @@ Appointment Service е consumer, а Pet Service е provider. Pact consumer test 
 
 ## 10. MCP сервер
 
-MCP серверот користи официјален C# SDK и stateless Streamable HTTP transport. Изложени се девет tools: `get_pet`, `get_owner_pets`, `find_available_veterinarians`, `get_upcoming_appointments`, `get_medical_history`, `get_vaccination_history`, `get_next_vaccination`, `record_medical_examination` и `record_vaccination`. MCP серверот не пристапува директно до базите; тој ги повикува REST API-јата на сервисите и го проследува валидираниот bearer token. Може да се тестира директно на `http://localhost:7001/mcp` или преку API Gateway на `http://localhost:7000/mcp`. Скриптата `scripts/verify-gateway-treatment-mcp.sh` го проверува реалниот Keycloak -> Gateway -> MCP -> Treatment тек.
+MCP серверот користи официјален C# SDK и stateless Streamable HTTP transport. Изложени се 13 tools: две Pet, шест Appointment и пет Treatment/Vaccination алатки. Целосниот список е во [`MCPServer/README.md`](MCPServer/README.md) и се открива во живо преку `tools/list`. MCP серверот не пристапува директно до базите; тој ги повикува REST API-јата на сервисите и го проследува валидираниот bearer token. Може да се тестира директно на `http://localhost:7001/mcp` или преку API Gateway на `http://localhost:7000/mcp`. Скриптата `scripts/verify-gateway-treatment-mcp.sh` го проверува реалниот Keycloak -> Gateway -> MCP -> Treatment тек.
 
-## 11. Тестирање и демонстрација
+## 11. Streamlit демо и MCP тестирање
+
+Со `docker compose up --build` се стартува едноставен Streamlit клиент на
+[http://localhost:8501](http://localhost:8501). Клиентот го демонстрира реалниот тек Keycloak →
+Gateway → Appointment → Consul → Pet → Kafka → Treatment и содржи посебен **MCP playground**.
+
+MCP playground-от:
+
+- прикажува што нуди серверот преку `tools/list`;
+- комуницира со MCP преку stateless Streamable HTTP;
+- иницијализира MCP и повикува алатки со JSON аргументи;
+- користи реален Keycloak токен и го докажува проследувањето на токенот до сервисите;
+- ја прикажува улогата на MCP како AI adapter над постојните REST API-ја, без директен пристап до базите.
+
+Со ова MCP се тестира преку Streamlit кориснички интерфејс, а дополнително постојат terminal/HTTP
+скриптата `scripts/verify-gateway-treatment-mcp.sh` и автоматизираните MCP integration тестови.
+
+## 12. Тестирање и демонстрација
 
 Health endpoints постојат на сите сервиси. `PetCarePlatform.http` и `scripts/demo.ps1` демонстрираат login, читање pet, пребарување слободен термин, закажување и појава на асинхроно известување. Pact тестовите го покриваат критичниот HTTP договор. За финалното видео се користи планот во `VIDEO_SCRIPT.md`, со максимално времетраење од пет минути.
 
-## 12. Улоги во тимот
+## 13. Улоги во тимот
 
 Член 1 е одговорен за Pet Service и pet domain. Член 2 е одговорен за Appointment Service, Consul и синхроната интеграција. Член 3 е одговорен за Treatment & Notification Service, Kafka и MCP. Gateway, Keycloak, документацијата и integration testing се заедничка одговорност.

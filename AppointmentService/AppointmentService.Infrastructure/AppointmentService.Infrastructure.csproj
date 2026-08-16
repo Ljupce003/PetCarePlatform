@@ -22,7 +22,7 @@
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3"/>
         <!-- HttpClient factory + Polly-based retry/circuit-breaker/timeout for the Pet Service client. -->
         <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.8.0"/>
-        <!-- Issues locally-signed JWTs (JwtTokenService) - stands in for Keycloak until it exists. -->
+        <!-- Locally-signed JWTs are retained only for the WebApplicationFactory Testing environment. -->
         <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.20.0"/>
         <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.20.0"/>
     </ItemGroup>

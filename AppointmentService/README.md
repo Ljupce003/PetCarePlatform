@@ -95,18 +95,16 @@ a seeded appointment.
 - **Known gap:** queries that take an `ownerId`/similar parameter (e.g.
   `GET /appointments/upcoming?ownerId=...`) don't yet check that the caller's own `sub` claim
   matches the id in the query — any authenticated user can currently query any owner's
-  appointments. Fixing this properly needs a stable mapping between Pet Service's/Keycloak's owner
-  identity and the `ownerId` GUIDs used throughout this service, which doesn't exist yet either.
+  appointments. The demo Keycloak, Pet, and Appointment seeds now use aligned owner IDs, so adding
+  that subject/owner authorization check is a separate hardening task rather than an integration
+  blocker.
 
 ### Service-to-service authentication
 
-`LocalServiceAccessTokenProvider` (`AppointmentService.Infrastructure/Security/`) attaches a
-locally-signed bearer token (role `service`, `client_id: appointment-service`) to every outgoing
-call to Pet Service, via `ServiceAccessTokenHandler`. This still hasn't been swapped for a real
-Keycloak client-credentials grant (`appointment-service` is a confidential client with
-`serviceAccountsEnabled: true` in the realm import, ready for this) — see "Keycloak /
-client-credentials authentication" below for what that replacement looks like. Pet Service also
-doesn't validate the bearer token it receives yet, so this remains a half-finished path end-to-end.
+`KeycloakServiceAccessTokenProvider` obtains a real OAuth2 client-credentials token for the
+confidential `appointment-service` client, caches it until shortly before expiry, and
+`ServiceAccessTokenHandler` attaches it to every outgoing Pet Service call. Pet Service validates
+the issuer, audience, and `service` role before serving its ownership endpoint.
 
 ## Kafka integration events
 
@@ -161,53 +159,20 @@ docker exec -it petcare-kafka /opt/kafka/bin/kafka-console-consumer.sh \
 
 The Appointment Service calls the Pet Service over HTTP (`IPetVerificationClient` →
 `PetServiceClient`, in `AppointmentService.Infrastructure/Clients/`). Service-to-service calls
-like this one are supposed to carry an OAuth2 **client-credentials** access token. Keycloak itself
-now exists (`infrastructure/keycloak/petcare-realm.json`, with an `appointment-service`
-confidential client already set up for exactly this grant) — this call just hasn't been switched
-over to use it yet; see "What to do" below.
-
-**Update (section 9):** this no longer sends no token at all — see "Security and authorization"
-above. `LocalServiceAccessTokenProvider` now attaches a real, locally-signed token; Pet Service
-just doesn't validate it yet. What's in place:
+like this one carry an OAuth2 **client-credentials** access token issued by Keycloak. The realm
+import (`infrastructure/keycloak/petcare-realm.json`) defines `appointment-service` as a
+confidential service-account client with the `service` role. What's in place:
 
 - `AppointmentService.Infrastructure/Security/ServiceAccessTokenHandler.cs` — a `DelegatingHandler`
-  already wired into the Pet Service `HttpClient` pipeline. It attaches
+  wired into the Pet Service `HttpClient` pipeline. It attaches
   `Authorization: Bearer <token>` to every outgoing request automatically.
 - `IServiceAccessTokenProvider` — the abstraction `ServiceAccessTokenHandler` asks for a token.
-- `LocalServiceAccessTokenProvider` — the implementation registered today. Issues a token via
-  `JwtTokenService` for `TestClients.AppointmentService` (`appointment-service` /
-  `appointment-secret`). Registered in `AddPetServiceClient(...)` inside
-  `AppointmentService.Infrastructure/DependencyInjection.cs`.
-- `NullServiceAccessTokenProvider` — still present, unregistered, kept only as the "send nothing"
-  reference implementation.
-
-### What to do once Keycloak exists
-
-1. Create a confidential client in the `petcare` realm for this service (e.g. client id
-   `appointment-service`), with the client-credentials grant enabled. Note its client secret.
-2. Add config to `appsettings.json` (and the `PetService__BaseUrl`-style env var overrides in
-   `docker-compose.yml`):
-   ```json
-   "Keycloak": {
-     "TokenEndpoint": "http://keycloak:8080/realms/petcare/protocol/openid-connect/token",
-     "ClientId": "appointment-service",
-     "ClientSecret": "<from step 1>"
-   }
-   ```
-3. Implement a real `IServiceAccessTokenProvider` (e.g. `KeycloakServiceAccessTokenProvider`)
-   that POSTs `grant_type=client_credentials` to the token endpoint and **caches** the token
-   until shortly before it expires (don't request a new one on every call).
-4. Swap the registration in `AddPetServiceClient(...)`:
-   ```csharp
-   services.AddSingleton<IServiceAccessTokenProvider, KeycloakServiceAccessTokenProvider>();
-   ```
-   (replacing `LocalServiceAccessTokenProvider`). Nothing else changes — `ServiceAccessTokenHandler`
-   and `PetServiceClient` already only depend on the interface.
-5. The Pet Service (and any other service we call) needs to actually validate that token on its
-   side too (JWT bearer authentication, audience/issuer checks) — that's a separate piece of work
-   on each service that owns an endpoint we call.
-6. `AddJwtBearer`'s validation and `POST /auth/login` already switch to real Keycloak in Docker —
-   see "Security and authorization" above.
+- `KeycloakServiceAccessTokenProvider` — POSTs `grant_type=client_credentials` to Keycloak and
+  caches the returned token until the configured refresh-skew window.
+- `Jwt:ClientId`, `Jwt:ClientSecret`, and `Jwt:ServiceTokenRefreshSkewSeconds` — runtime settings;
+  Docker injects the demo secret used by the realm import.
+- Pet Service's `service` role policy — validates and authorizes the resulting bearer token on
+  `GET /api/pets/{petId}/exists`.
 
 ## Consul / service discovery
 
@@ -229,9 +194,9 @@ What it does:
 - **`ServiceDiscoveryHandler`** — a `DelegatingHandler` that, if added to an `HttpClient`'s
   pipeline, rewrites requests aimed at a logical `http://<name>-service/...` host to whatever
   Consul currently reports as the healthy address/port for `<name>-service`.
-- Registration failures (e.g. running `dotnet run` locally without Consul up) are logged as a
-  warning, not thrown — same "degrade gracefully" pattern used for the database and the Pet
-  Service client, so the service still starts.
+- Registration failures (e.g. running `dotnet run` locally without Consul up) are logged and
+  retried by the background registration loop. The service starts and joins Consul when it becomes
+  available.
 
 Configuration (`appsettings.json`, overridable via `Consul__*`/`ServiceRegistration__*` env vars):
 
@@ -249,21 +214,11 @@ In Docker (`docker-compose.yml`), a `consul` container (`hashicorp/consul:1.21.5
 `http://localhost:8500`) is started, and `appointment-service`'s registration address/port point at
 its container name/port so other containers can reach it.
 
-**Not yet wired up:** `PetServiceClient`'s `HttpClient` still uses the static `PetService:BaseUrl`
-directly (unchanged from section 5) — `ServiceDiscoveryHandler` is *not* in its pipeline. That's
-deliberate: Pet Service doesn't register itself in Consul yet, so resolving `http://pet-service/`
-through Consul would just fail with "no healthy instances found" and break a currently-working
-integration. Once Pet Service adds its own `ConsulRegistrationHostedService` (or equivalent) and
-you want Appointment Service to discover it dynamically instead of reading a fixed URL from
-config, the change here is small:
-
-1. Change `PetService:BaseUrl` to a logical host ending in `-service`, e.g. `http://pet-service/`.
-2. Add `.AddHttpMessageHandler<ServiceDiscoveryHandler>()` to the
-   `AddHttpClient<IPetVerificationClient, PetServiceClient>(...)` chain in
-   `AppointmentService.Infrastructure/DependencyInjection.cs` (alongside the existing
-   `ServiceAccessTokenHandler` and resilience handler).
-
-Nothing in `PetServiceClient` itself needs to change — it only ever sees `HttpClient.BaseAddress`.
+`PetServiceClient` uses the logical base address `http://pet-service`. Its HTTP pipeline obtains a
+service token, asks Consul for a healthy `pet-service` instance, rewrites the request to that
+address, and applies the standard resilience handler. Both Pet and Appointment refresh their
+Consul registrations in the background, so discovery remains active after Consul restarts or
+temporarily loses its catalog state.
 
 ## MCP contribution
 
@@ -302,30 +257,23 @@ Expected responses:
   `true`/`false`, etc.)
 - `404 Not Found` is also treated as "pet does not exist" (`Exists = false`).
 
-This endpoint doesn't exist on the Pet Service yet — it's listed under Pet Service's own task
-list (section 7, "cross-service integration work"). If the actual shape ends up different, only
-`PetServiceClient`'s private `PetExistsResponse` record and the two lines that map it to
-`PetVerificationResult` need to change — that's the whole point of the anti-corruption layer.
+Pet Service implements this endpoint (including the `/api` compatibility route), validates the
+Appointment Service's Keycloak token, and returns ownership from its real PostgreSQL data. The
+private `PetExistsResponse` mapping remains the anti-corruption layer between the two services.
 
-### Testing without Pet Service: FakePetVerificationClient + demo IDs
+### Isolated development without Pet Service
 
-Pet Service also has no seeded pets/owners yet, so even once `/exists` exists there's nothing real
-to verify against locally. `AppointmentService.Infrastructure/Clients/FakePetVerificationClient.cs`
-stands in for `PetServiceClient` so the whole booking workflow is still testable end-to-end:
+`AppointmentService.Infrastructure/Clients/FakePetVerificationClient.cs` remains available only so
+Appointment Service can be run and tested in isolation when Pet Service is intentionally absent:
 
-- Controlled by `PetService:UseFakeVerification` — `true` in `appsettings.Development.json` (so
-  `dotnet run` / Swagger just works) **and** currently also `true` via `PetService__UseFakeVerification`
-  in `docker-compose.yml` for `appointment-service`, since Pet Service doesn't have a working
-  `/exists` endpoint in Docker either yet. `appsettings.json`'s own default is `false`. Remove the
-  `docker-compose.yml` override once Pet Service implements the real endpoint, so Docker goes back
-  to exercising the real integration.
+- Controlled by `PetService:UseFakeVerification` — `true` only in
+  `appsettings.Development.json` for a standalone `dotnet run`. The default is `false`, and Docker
+  explicitly uses `false`, so the composed platform always exercises the real integration.
 - Accepts any non-empty `petId`/`ownerId` as a valid, owned pet — it doesn't try to fake Pet
   Service's actual data, just unblocks testing this service's own logic (slot reservation,
   double-booking, Kafka events, etc.) independently of Pet Service's progress.
 - The demo `DemoPetId` (`44444444-4444-4444-4444-444444444444`) and `DemoOwnerId`
   (`33333333-3333-3333-3333-333333333333`) from `AppointmentDbInitializer` are convenient to reuse
-  since `DemoOwnerId` already has one seeded appointment, so `GET /appointments/upcoming` has
-  something to show against the same owner right away — but any GUIDs work.
-- Once Pet Service has a real `/exists` endpoint and real seed data, set
-  `PetService:UseFakeVerification` to `false` (or delete the setting) to go back to the real
-  `PetServiceClient` — no other code changes needed.
+  because the same IDs are seeded by Pet Service and `DemoOwnerId` already has one seeded
+  appointment. In fake mode any non-empty IDs are accepted; in the composed platform the IDs must
+  exist and have the requested ownership relation in Pet Service.

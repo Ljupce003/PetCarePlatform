@@ -84,18 +84,34 @@ public sealed class ServiceDiscoveryHandler(IConsulServiceResolver resolver) : D
 }
 
 /// <summary>
-/// Registers this instance in Consul on startup (with an HTTP health check pointed at /health)
-/// and deregisters it on shutdown. Registration failures -- e.g. Consul isn't running during a
-/// plain `dotnet run` -- are logged, not thrown, so the service still starts and serves traffic;
-/// it just won't be discoverable until Consul is reachable and the service restarts. Same
-/// "degrade gracefully" approach already used for the database and the Pet Service client.
+/// Registers this instance in Consul with an HTTP health check pointed at /health, periodically
+/// renews the registration so a transient startup failure cannot leave the service undiscoverable,
+/// and deregisters it on shutdown.
 /// </summary>
 public sealed class ConsulRegistrationHostedService(
     IHttpClientFactory httpClientFactory,
     IOptions<ServiceRegistrationOptions> options,
-    ILogger<ConsulRegistrationHostedService> logger) : IHostedService
+    ILogger<ConsulRegistrationHostedService> logger) : BackgroundService
 {
-    public async Task StartAsync(CancellationToken cancellationToken)
+    private static readonly TimeSpan RegistrationRefreshInterval = TimeSpan.FromSeconds(30);
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            await RegisterAsync(stoppingToken);
+            try
+            {
+                await Task.Delay(RegistrationRefreshInterval, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+        }
+    }
+
+    private async Task RegisterAsync(CancellationToken cancellationToken)
     {
         var registration = options.Value;
         var body = new
@@ -110,7 +126,7 @@ public sealed class ConsulRegistrationHostedService(
                 HTTP = $"http://{registration.Address}:{registration.Port}/health",
                 Interval = "10s",
                 Timeout = "3s",
-                DeregisterCriticalServiceAfter = "1m"
+                DeregisterCriticalServiceAfter = "2m"
             }
         };
 
@@ -127,14 +143,14 @@ public sealed class ConsulRegistrationHostedService(
         {
             logger.LogWarning(exception,
                 "Could not register {ServiceName} ({ServiceId}) in Consul. The service will keep " +
-                "running, but other components won't be able to discover it until Consul is " +
-                "reachable and this instance restarts.",
+                "running and retry registration automatically.",
                 registration.Name, registration.Id);
         }
     }
 
-    public async Task StopAsync(CancellationToken cancellationToken)
+    public override async Task StopAsync(CancellationToken cancellationToken)
     {
+        await base.StopAsync(cancellationToken);
         var registration = options.Value;
         try
         {

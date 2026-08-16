@@ -21,6 +21,10 @@ The `/mcp` endpoint requires a valid token. The same bearer token is forwarded t
 
 - `find_available_veterinarians`
 - `get_upcoming_appointments`
+- `search_clinics`
+- `search_available_slots`
+- `find_open_appointment_slots`
+- `create_available_slot`
 
 ## Registered Treatment tools
 
@@ -41,6 +45,23 @@ dotnet run --project MCPServer/MCPServer.csproj --launch-profile http
 ```
 
 Use `MCPServer.http` to obtain a demo token, initialize MCP, and list tools.
+
+## Streamlit MCP client
+
+The repository includes a simple Streamlit UI that acts as a real MCP client:
+
+- [http://localhost:8501](http://localhost:8501) when Docker Compose is running;
+- source and local instructions: [`DemoUI/README.md`](../DemoUI/README.md).
+
+Open the **MCP playground** tab to authenticate with Keycloak, initialize the Streamable HTTP
+session, discover the registered tools with `tools/list`, and invoke a tool with JSON arguments.
+The result is rendered directly in the UI. This provides the course requirement's Streamlit test
+method in addition to the terminal/HTTP script and automated integration client.
+
+The MCP server's role in the architecture is an AI-facing adapter. It exposes relevant Pet,
+Appointment, Treatment, and Vaccination capabilities without reading any service database. It
+communicates with the owning microservices through authenticated REST and forwards the caller's
+bearer token so downstream authorization remains authoritative.
 
 ## GitHub Copilot MCP client
 
@@ -81,7 +102,7 @@ The public Docker endpoint is routed through the API Gateway at `http://localhos
 dotnet test tests/MCPServer.IntegrationTests/MCPServer.IntegrationTests.csproj
 ```
 
-The integration suite verifies anonymous health access, MCP authentication, initialization, all nine tools, downstream route selection, response parsing, and bearer-token forwarding. Its required end-to-end test starts a real Treatment API with PostgreSQL, records an examination through MCP, and reads it back through MCP.
+The integration suite verifies anonymous health access, MCP authentication, initialization, all registered tools, downstream route selection, response parsing, and bearer-token forwarding. Its required end-to-end test starts a real Treatment API with PostgreSQL, records an examination through MCP, and reads it back through MCP.
 
 ## Gateway end-to-end verification
 
