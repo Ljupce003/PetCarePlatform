@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Converters;
+using Shared.ServiceDiscovery;
 using TreatmentAndNotificationService.API.ExceptionHandling;
 using TreatmentAndNotificationService.API.OpenApi;
 using TreatmentAndNotificationService.API.Security;
@@ -27,6 +28,7 @@ builder.Services.AddOpenApi(options =>
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
     options.SerializerSettings.Converters.Add(new StringEnumConverter()));
 builder.Services.AddHealthChecks();
+builder.Services.AddPetCareConsul(builder.Configuration);
 
 var jwtSection = builder.Configuration.GetRequiredSection("Jwt");
 var jwtIssuer = jwtSection["Issuer"]

@@ -195,9 +195,13 @@ with overview_tab:
             services = catalog.json()
             st.markdown("**Consul service registry**")
             st.json(services)
-            required = {"pet-service", "appointment-service"}
+            required = {
+                "pet-service",
+                "appointment-service",
+                "treatment-and-notification-service",
+            }
             if required.issubset(services):
-                st.success("Pet and Appointment services are registered in Consul.")
+                st.success("Pet, Appointment, and Treatment services are registered in Consul.")
             else:
                 st.warning(f"Missing Consul registrations: {sorted(required.difference(services))}")
         except requests.RequestException as exc:
