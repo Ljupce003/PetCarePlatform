@@ -32,6 +32,11 @@
     <Project Path="PetService/PetService.Infrastructure/PetService.Infrastructure.csproj" />
     <Project Path="PetService/PetService.Api/PetService.Api.csproj" />
   </Folder>
+  <Folder Name="/PetService/Tests/">
+    <Project Path="PetService/PetService.Domain.Tests/PetService.Domain.Tests.csproj" />
+    <Project Path="PetService/PetService.Infrastructure.Tests/PetService.Infrastructure.Tests.csproj" />
+    <Project Path="PetService/PetService.Api.IntegrationTests/PetService.Api.IntegrationTests.csproj" />
+  </Folder>
   <Project Path="ApiGateway/ApiGateway.csproj" />
   <Project Path="MCPServer/MCPServer.csproj" />
   

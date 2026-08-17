@@ -24,10 +24,12 @@ GET {{AppointmentService_HostAddress}}/openapi/v1.json
 # DemoPetId             44444444-4444-4444-4444-444444444444
 
 
-### ===== Auth (section 9) — everything below needs a token; see TestUsers/TestClients =====
+### ===== Auth (section 9) — everything below needs a token =====
 ### owner1 / Owner123!       -> role "owner"        (user id = DemoOwnerId, see above)
 ### vet1   / Vet123!         -> role "veterinarian"  (user id = DemoVeterinarianId, see above)
 ### admin1 / Admin123!       -> role "admin"
+### /auth/login proxies these credentials straight to the real Keycloak realm (see
+### AuthController/KeycloakAuthClient) — Keycloak must be reachable (docker compose up keycloak).
 
 ### Log in as the owner. Capture the token so the requests below can reuse it automatically.
 POST {{AppointmentService_HostAddress}}/auth/login
@@ -70,17 +72,6 @@ Content-Type: application/json
 > {%
     client.global.set("vetToken", response.body.accessToken);
 %}
-
-### Service-to-service token (client-credentials) — what LocalServiceAccessTokenProvider gets when
-### this service calls Pet Service. Not something a person normally calls from Swagger.
-POST {{AppointmentService_HostAddress}}/auth/token
-Content-Type: application/json
-
-{
-  "clientId": "appointment-service",
-  "clientSecret": "appointment-secret"
-}
-
 
 ### List all clinics
 GET {{AppointmentService_HostAddress}}/clinics

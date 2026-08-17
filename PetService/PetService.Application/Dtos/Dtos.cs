@@ -24,4 +24,4 @@ public record PetDto(
 /// <summary>
 /// Minimal integration contract consumed by Appointment Service.
 /// </summary>
-public record PetOwnershipDto(bool Exists, bool IsOwnedByOwner);
+public record PetOwnershipDto(bool Exists, bool OwnedByOwner);

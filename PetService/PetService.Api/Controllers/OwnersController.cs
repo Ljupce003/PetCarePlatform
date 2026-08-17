@@ -18,6 +18,9 @@ public class OwnersController(
     GetAllOwnersHandler getAllOwners,
     GetOwnerPetsHandler getOwnerPets) : ControllerBase
 {
+    /// <summary>Creates a pet owner after validating contact information.</summary>
+    /// <response code="201">The owner was created.</response>
+    /// <response code="400">The owner data is invalid.</response>
     [HttpPost]
     [ProducesResponseType<OwnerDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -32,6 +35,9 @@ public class OwnersController(
         return CreatedAtAction(nameof(GetById), new { id = owner.OwnerId }, owner);
     }
 
+    /// <summary>Gets an owner by identifier.</summary>
+    /// <response code="200">The owner was found.</response>
+    /// <response code="404">The owner does not exist.</response>
     [HttpGet("{id:guid}")]
     [ProducesResponseType<OwnerDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -48,11 +54,16 @@ public class OwnersController(
             : Ok(owner);
     }
 
+    /// <summary>Lists all owners ordered by name.</summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<OwnerDto>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<OwnerDto>>> GetAll(CancellationToken cancellationToken) =>
         Ok(await getAllOwners.HandleAsync(new GetAllOwnersQuery(), cancellationToken));
 
+    /// <summary>Updates an owner's contact information.</summary>
+    /// <response code="200">The owner was updated.</response>
+    /// <response code="400">The owner data is invalid.</response>
+    /// <response code="404">The owner does not exist.</response>
     [HttpPut("{id:guid}")]
     [ProducesResponseType<OwnerDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -65,6 +76,9 @@ public class OwnersController(
             new UpdateOwnerCommand(id, request.OwnerName, request.Email, request.Phone, request.Address),
             cancellationToken));
 
+    /// <summary>Deletes an owner and their pets.</summary>
+    /// <response code="204">The owner was deleted.</response>
+    /// <response code="404">The owner does not exist.</response>
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -74,6 +88,9 @@ public class OwnersController(
         return NoContent();
     }
 
+    /// <summary>Lists every pet registered to an owner.</summary>
+    /// <response code="200">The owner's pets were returned.</response>
+    /// <response code="404">The owner does not exist.</response>
     [HttpGet("{ownerId:guid}/pets")]
     [ProducesResponseType<IReadOnlyList<PetDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

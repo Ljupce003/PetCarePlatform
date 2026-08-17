@@ -54,26 +54,4 @@ public sealed class AuthTests(AppointmentServiceApiFactory factory) : IClassFixt
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
-
-    [Fact]
-    public async Task Token_WithValidClientCredentials_ReturnsAServiceToken()
-    {
-        var client = factory.CreateClient();
-
-        var response = await client.PostAsJsonAsync("/auth/token", new { clientId = "appointment-service", clientSecret = "appointment-secret" });
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
-        Assert.Equal("service", body.GetProperty("role").GetString());
-    }
-
-    [Fact]
-    public async Task Token_WithWrongClientSecret_ReturnsUnauthorized()
-    {
-        var client = factory.CreateClient();
-
-        var response = await client.PostAsJsonAsync("/auth/token", new { clientId = "appointment-service", clientSecret = "wrong" });
-
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
 }

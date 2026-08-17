@@ -165,11 +165,11 @@ Implement Pet-related MCP tools.
 
 ### 8. Testing
 
-* [ ] Unit tests
-* [ ] Repository tests
-* [ ] API tests
-* [ ] Provider Pact tests
-* [ ] Health endpoint test
+* [x] Unit tests
+* [x] Repository tests
+* [x] API tests
+* [x] Provider Pact tests
+* [x] Health endpoint test
 
 ---
 

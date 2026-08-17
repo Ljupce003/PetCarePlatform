@@ -159,10 +159,10 @@ You must expose the Pet Service through REST endpoints.
 ## 7. Cross-service integration work
 The Appointment Service must be able to verify pet ownership without directly accessing your domain model.
 
-- [ ] Design a stable anti-corruption interface for pet verification.
-- [ ] Expose a simple response contract that Appointment Service can consume.
-- [ ] Ensure the endpoint returns only the information required by the consumer.
-- [ ] Document how the Pet Service is used by Appointment Service.
+- [x] Design a stable anti-corruption interface for pet verification.
+- [x] Expose a simple response contract that Appointment Service can consume.
+- [x] Ensure the endpoint returns only the information required by the consumer.
+- [x] Document how the Pet Service is used by Appointment Service.
 
 ### Acceptance criteria
 - Appointment Service can call the Pet Service safely without sharing internal domain objects.
@@ -172,10 +172,10 @@ The Appointment Service must be able to verify pet ownership without directly ac
 ## 8. MCP contribution
 You own the Pet-related tools in the shared MCP server.
 
-- [ ] Define the MCP contract for Pet tools.
-- [ ] Implement `GetPet`.
-- [ ] Implement `GetOwnerPets`.
-- [ ] Test MCP tool responses with a local client or inspector.
+- [x] Define the MCP contract for Pet tools.
+- [x] Implement `GetPet`.
+- [x] Implement `GetOwnerPets`.
+- [x] Test MCP tool responses with a local client or inspector.
 
 ### Acceptance criteria
 - The MCP server can return Pet Service data through the registered tools.
@@ -183,11 +183,11 @@ You own the Pet-related tools in the shared MCP server.
 ---
 
 ## 9. Testing
-- [ ] Write unit tests for domain logic.
-- [ ] Write repository tests for persistence behavior.
-- [ ] Write API tests for all main endpoints.
-- [ ] Add provider-side Pact tests for the Pet Service contract.
-- [ ] Add a health endpoint test.
+- [x] Write unit tests for domain logic.
+- [x] Write repository tests for persistence behavior.
+- [x] Write API tests for all main endpoints.
+- [x] Add provider-side Pact tests for the Pet Service contract.
+- [x] Add a health endpoint test.
 
 ### Acceptance criteria
 - Core business flows and API behavior are covered by automated tests.
@@ -196,10 +196,10 @@ You own the Pet-related tools in the shared MCP server.
 ---
 
 ## 10. Documentation and deliverables
-- [ ] Document the Pet Service architecture and responsibilities.
-- [ ] Add endpoint documentation in Swagger/OpenAPI.
-- [ ] Document the domain model and business rules.
-- [ ] Prepare a short summary of how the Pet Service works for the final presentation.
+- [x] Document the Pet Service architecture and responsibilities.
+- [x] Add endpoint documentation in Swagger/OpenAPI.
+- [x] Document the domain model and business rules.
+- [x] Prepare a short summary of how the Pet Service works for the final presentation.
 
 ---
 

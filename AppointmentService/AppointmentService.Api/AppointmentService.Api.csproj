@@ -19,10 +19,6 @@
         <!-- Serves the Swagger UI over the OpenAPI document produced by Microsoft.AspNetCore.OpenApi. -->
         <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="9.0.6"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10"/>
-        <!-- Exposes this service's own appointment queries as MCP tools (section 10) at /mcp,
-             in the same process: tools call the Application-layer handlers directly, no
-             separate service or HTTP hop needed. -->
-        <PackageReference Include="ModelContextProtocol.AspNetCore" Version="1.4.1"/>
         <!-- The EF Core Tools (dotnet ef migrations ...) need this on the startup project, not
              just on Infrastructure where the DbContext actually lives. -->
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">

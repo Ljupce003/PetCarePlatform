@@ -54,10 +54,10 @@ public sealed class TreatmentTools
         [Description("When the examination occurred.")] DateTimeOffset examinedAtUtc,
         [Description("The clinical diagnosis.")] string diagnosis,
         [Description("The prescribed treatment plan.")] string treatmentPlan,
-        [Description("The prescribed medications, if any.")] IReadOnlyList<string>? medications,
-        [Description("The next control time, if follow-up is required.")] DateTimeOffset? nextControlAtUtc,
-        [Description("Additional clinical notes.")] string? notes,
-        CancellationToken cancellationToken)
+        [Description("The prescribed medications, if any.")] IReadOnlyList<string>? medications = null,
+        [Description("The next control time, if follow-up is required.")] DateTimeOffset? nextControlAtUtc = null,
+        [Description("Additional clinical notes.")] string? notes = null,
+        CancellationToken cancellationToken = default)
     {
         var request = new RecordMedicalExaminationRequest(
             petId, ownerId, veterinarianId, appointmentId, examinedAtUtc, diagnosis,
@@ -74,9 +74,9 @@ public sealed class TreatmentTools
         [Description("The veterinarian ID.")] Guid veterinarianId,
         [Description("The administered vaccine name.")] string vaccineName,
         [Description("The vaccine administration date.")] DateOnly administeredOn,
-        [Description("The next due date, when another dose is required.")] DateOnly? nextDueOn,
-        [Description("The vaccine batch number, when available.")] string? batchNumber,
-        CancellationToken cancellationToken)
+        [Description("The next due date, when another dose is required.")] DateOnly? nextDueOn = null,
+        [Description("The vaccine batch number, when available.")] string? batchNumber = null,
+        CancellationToken cancellationToken = default)
     {
         var request = new RecordVaccinationRequest(
             petId, ownerId, veterinarianId, vaccineName, administeredOn, nextDueOn, batchNumber);

@@ -36,10 +36,20 @@ public static class DependencyInjection
         services.AddScoped<IAvailabilitySlotRepository, AvailabilitySlotRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
-        // JwtTokenService issues/is configured for the tokens both /auth/* endpoints (Api layer)
-        // and LocalServiceAccessTokenProvider (below) hand out. See Security/JwtOptions.cs.
+        // JwtTokenService issues the locally-signed service-to-service token
+        // LocalServiceAccessTokenProvider (below) hands out for calls to Pet Service. Human login
+        // (POST /auth/login) doesn't use this at all -- see KeycloakAuthClient. See Security/JwtOptions.cs.
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.AddSingleton<JwtTokenService>();
+
+        // The only login path AuthController has: proxies to Keycloak's own token endpoint.
+        services.AddHttpClient<KeycloakAuthClient>((provider, client) =>
+        {
+            var authority = provider.GetRequiredService<IConfiguration>()["Jwt:Authority"]?.TrimEnd('/')
+                ?? throw new InvalidOperationException("Jwt:Authority is required.");
+            client.BaseAddress = new Uri(authority + "/");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
 
         AddPetServiceClient(services, configuration);
 

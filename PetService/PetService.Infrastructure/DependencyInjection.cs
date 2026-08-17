@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using PetService.Application;
 using PetService.Application.Abstractions;
 using PetService.Infrastructure.Persistence;
+using Shared.ServiceDiscovery;
 
 namespace PetService.Infrastructure;
 
@@ -27,6 +28,7 @@ public static class DependencyInjection
         services.AddScoped<IOwnerRepository, OwnerRepository>();
         services.AddScoped<IPetRepository, PetRepository>();
 
+        services.AddPetCareConsul(configuration);
         services.AddPetServiceApplication();
         return services;
     }
