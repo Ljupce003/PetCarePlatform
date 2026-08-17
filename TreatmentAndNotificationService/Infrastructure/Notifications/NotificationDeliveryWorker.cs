@@ -1,5 +1,3 @@
-using TreatmentAndNotificationService.Domain.Repositories;
-
 namespace TreatmentAndNotificationService.Infrastructure.Notifications;
 
 public sealed class NotificationDeliveryWorker(
@@ -7,6 +5,7 @@ public sealed class NotificationDeliveryWorker(
     ILogger<NotificationDeliveryWorker> logger) : BackgroundService
 {
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(15);
+    private const int BatchSize = 100;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -29,26 +28,7 @@ public sealed class NotificationDeliveryWorker(
     private async Task DeliverDueNotificationsAsync(CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
-        var notifications = scope.ServiceProvider.GetRequiredService<INotificationRepository>();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        var sender = scope.ServiceProvider.GetRequiredService<INotificationSender>();
-        var due = await notifications.GetDuePendingAsync(DateTimeOffset.UtcNow, 100, cancellationToken);
-
-        foreach (var notification in due)
-        {
-            try
-            {
-                await sender.SendAsync(notification, cancellationToken);
-                notification.MarkSent(DateTimeOffset.UtcNow);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
-            {
-                logger.LogError(exception, "Unable to deliver notification {NotificationId}.", notification.Id);
-                notification.MarkFailed(exception.Message);
-            }
-        }
-
-        if (due.Count > 0)
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+        var processor = scope.ServiceProvider.GetRequiredService<NotificationDeliveryProcessor>();
+        await processor.DeliverDueAsync(BatchSize, cancellationToken);
     }
 }

@@ -2,7 +2,10 @@ using TreatmentAndNotificationService.Domain.Entities;
 
 namespace TreatmentAndNotificationService.Infrastructure.Notifications;
 
-/// <summary>Demo delivery adapter. Replace this adapter with e-mail/SMS providers later.</summary>
+/// <summary>
+/// Final delivery adapter for the course demonstration. Delivery is made observable through
+/// structured console logs without requiring external e-mail or SMS accounts.
+/// </summary>
 public sealed class ConsoleNotificationSender(ILogger<ConsoleNotificationSender> logger) : INotificationSender
 {
     public Task SendAsync(Notification notification, CancellationToken cancellationToken)

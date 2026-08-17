@@ -74,7 +74,7 @@ Implement use cases for medical and notification flows.
 - [x] Implement `GetMedicalHistory`
 - [x] Implement `GetVaccinationHistory`
 - [x] Implement `GetNextVaccination`
-- [ ] Implement `GetPendingNotifications`
+- **Out of scope by team decision:** `GetPendingNotifications` is not required for the course demo.
 
 ### DTOs and validation
 - [x] Create medical and notification DTOs.
@@ -124,7 +124,7 @@ Implement the background processing part of the notification flow.
 - [x] Create a background worker service.
 - [x] Implement a scheduler for pending notifications.
 - [x] Implement a demo console sender for notifications.
-- [ ] Add placeholders for email and SMS delivery.
+- **Out of scope by team decision:** email/SMS providers and placeholders will not be implemented.
 - [x] Ensure sending is safe and logged clearly.
 
 ### Acceptance criteria
@@ -195,7 +195,7 @@ You own the shared MCP server in the architecture.
 ## 11. Testing
 - [x] Write unit tests for domain logic.
 - [x] Write integration tests for Kafka processing.
-- [ ] Write worker tests for notification processing.
+- [x] Write worker tests for notification processing.
 - [x] Add MCP Inspector or client-side tests.
 - [x] Add health endpoint tests.
 
@@ -206,11 +206,11 @@ You own the shared MCP server in the architecture.
 ---
 
 ## 12. Documentation and deliverables
-- [ ] Document the Treatment Service architecture and domain design.
-- [ ] Document the Kafka consumer flow and notification model.
+- [x] Document the Treatment Service architecture and domain design.
+- [x] Document the Kafka consumer flow and notification model.
 - [x] Document the MCP server responsibilities and tool registration.
 - [x] Add Swagger/OpenAPI documentation for the API.
-- [ ] Prepare the service explanation for the final presentation.
+- [x] Prepare the service explanation for the final presentation.
 
 ---
 
@@ -220,4 +220,19 @@ You are done when:
 - medical records, vaccinations, and notifications are implemented;
 - Kafka event consumption and notification generation work correctly;
 - the MCP server is implemented and reachable;
-- tests and documentation are complete.
+- tests and documentation are complete;
+- notification delivery is demonstrated through the console sender; email, SMS, and a pending-notifications API are not part of the agreed scope.
+
+## Final verification — 14 August 2026
+
+- [x] Treatment project builds with zero warnings and zero errors.
+- [x] 53 Treatment domain tests pass.
+- [x] 6 notification worker tests pass.
+- [x] 37 Treatment API/Kafka/PostgreSQL integration tests pass.
+- [x] 11 Treatment Pact tests pass.
+- [x] 10 MCP integration tests pass.
+- [x] 30 API Gateway integration tests pass.
+- [x] `verify-gateway-treatment-mcp.sh` passes against rebuilt Docker containers.
+- [x] `verify-treatment-notification-worker.sh` console-delivers a live notification and observes persisted `Sent` status.
+
+**Member 3 status: complete.** Any later re-run after changes by other members belongs to the shared final regression phase.

@@ -15,6 +15,7 @@
   <Folder Name="/TreatmentAndNotificationService/" />
   <Folder Name="/TreatmentAndNotificationService/Tests/">
     <Project Path="tests/TreatmentAndNotificationService.Domain.Tests/TreatmentAndNotificationService.Domain.Tests.csproj" />
+    <Project Path="tests/TreatmentAndNotificationService.Worker.Tests/TreatmentAndNotificationService.Worker.Tests.csproj" />
     <Project Path="tests/TreatmentAndNotificationService.PactTests/TreatmentAndNotificationService.PactTests.csproj" />
     <Project Path="tests/TreatmentAndNotificationService.Api.IntegrationTests/TreatmentAndNotificationService.Api.IntegrationTests.csproj" />
   </Folder>
@@ -30,6 +31,11 @@
     <Project Path="PetService/PetService.Application/PetService.Application.csproj" />
     <Project Path="PetService/PetService.Infrastructure/PetService.Infrastructure.csproj" />
     <Project Path="PetService/PetService.Api/PetService.Api.csproj" />
+  </Folder>
+  <Folder Name="/PetService/Tests/">
+    <Project Path="PetService/PetService.Domain.Tests/PetService.Domain.Tests.csproj" />
+    <Project Path="PetService/PetService.Infrastructure.Tests/PetService.Infrastructure.Tests.csproj" />
+    <Project Path="PetService/PetService.Api.IntegrationTests/PetService.Api.IntegrationTests.csproj" />
   </Folder>
   <Project Path="ApiGateway/ApiGateway.csproj" />
   <Project Path="MCPServer/MCPServer.csproj" />

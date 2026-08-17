@@ -8,7 +8,7 @@ The shared MCP server exposes PetCare operations to MCP clients without accessin
 - Docker Compose: `http://localhost:7001/mcp`
 - Health: `/health` (anonymous)
 - Transport: stateless Streamable HTTP
-- Authentication: bearer JWT using the same temporary issuer, audience, and development key as Appointment and Treatment services
+- Authentication: Keycloak bearer JWT in Docker; the legacy local signing key is retained only for isolated development/tests
 
 The `/mcp` endpoint requires a valid token. The same bearer token is forwarded to downstream services, which perform their own authorization checks. Treatment write tools therefore require the Treatment Service's `veterinarian` or `admin` role.
 
@@ -41,6 +41,30 @@ dotnet run --project MCPServer/MCPServer.csproj --launch-profile http
 ```
 
 Use `MCPServer.http` to obtain a demo token, initialize MCP, and list tools.
+
+## GitHub Copilot MCP client
+
+The server has also been verified with GitHub Copilot's MCP support. After obtaining a current
+Keycloak access token, configure the remote server in `mcp.json`:
+
+```json
+{
+  "servers": {
+    "petcare": {
+      "url": "http://localhost:7000/mcp",
+      "requestInit": {
+        "headers": {
+          "Authorization": "Bearer REPLACE_WITH_CURRENT_KEYCLOAK_TOKEN"
+        }
+      }
+    }
+  }
+}
+```
+
+The demo access token expires after 15 minutes, so replace it when Copilot starts receiving `401`.
+The Gateway validates it, MCP forwards it, and the destination service applies the final role
+authorization. This proves that MCP does not bypass the platform security boundary.
 
 ## Run with Docker
 

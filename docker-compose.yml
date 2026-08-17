@@ -145,12 +145,19 @@ services:
       Jwt__Audience: "petcare"
       Jwt__ClientId: "pet-service"
       Jwt__RequireHttpsMetadata: "false"
+      Consul__Address: "http://consul:8500"
+      ServiceRegistration__Name: "pet-service"
+      ServiceRegistration__Id: "pet-service-1"
+      ServiceRegistration__Address: "pet-service"
+      ServiceRegistration__Port: "8080"
     ports:
       - "5101:8080"
     depends_on:
       keycloak:
         condition: service_healthy
       pet-db:
+        condition: service_healthy
+      consul:
         condition: service_healthy
 
   appointment-service:
@@ -164,8 +171,8 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Database: "Host=appointment-db;Port=5432;Database=petcare_appointment;Username=postgres;Password=postgres"
       PetService__BaseUrl: "http://pet-service:8080"
-      # TEMPORARY: Pet Service has no /api/pets/{id}/exists endpoint (or seeded data) yet, so real
-      # verification always 404s. Remove this once Pet Service implements that endpoint.
+      # TEMPORARY: Member 2 still needs to replace Appointment's placeholder service token and
+      # enable its real Pet client. Pet Service now supports the expected verification endpoint.
       PetService__UseFakeVerification: "true"
       Consul__Address: "http://consul:8500"
       ServiceRegistration__Name: "appointment-service"
