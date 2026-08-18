@@ -49,6 +49,7 @@ public class TreatmentDbContext : DbContext, IUnitOfWork
             builder.Property(item => item.SourceEventId).HasConversion(item => item.Value, value => SourceEventId.Create(value)).HasMaxLength(200).IsRequired();
             builder.Property(item => item.FailureReason).HasMaxLength(500);
             builder.HasIndex(item => item.SourceEventId).IsUnique();
+            builder.HasIndex(item => item.VeterinarianId);
             builder.HasIndex(item => new { item.Status, item.ScheduledForUtc });
         });
         

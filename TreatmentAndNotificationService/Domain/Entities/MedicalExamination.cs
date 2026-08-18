@@ -62,6 +62,20 @@ public class MedicalExamination
         return events;
     }
 
+    public void Update(DateTimeOffset examinedAtUtc, Diagnosis diagnosis, TreatmentPlan treatmentPlan,
+        IEnumerable<string>? medications, DateTimeOffset? nextControlAtUtc, string? notes)
+    {
+        if (examinedAtUtc == default) throw new DomainValidationException("Examination time is required.");
+        if (nextControlAtUtc.HasValue && nextControlAtUtc <= examinedAtUtc)
+            throw new DomainValidationException("Follow-up must be after the examination.");
+        ExaminedAtUtc = examinedAtUtc.ToUniversalTime();
+        Diagnosis = diagnosis ?? throw new ArgumentNullException(nameof(diagnosis));
+        TreatmentPlan = treatmentPlan ?? throw new ArgumentNullException(nameof(treatmentPlan));
+        Medications = Normalize(medications);
+        NextControlAtUtc = nextControlAtUtc?.ToUniversalTime();
+        Notes = NormalizeOptional(notes, 2000, "Notes");
+    }
+
     private static List<string> Normalize(IEnumerable<string>? values) => values?
         .Where(value => !string.IsNullOrWhiteSpace(value))
         .Select(value => value.Trim())

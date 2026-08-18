@@ -9,6 +9,7 @@ public class Notification
 {
     public Guid Id { get; private set; }
     public Guid OwnerId { get; private set; }
+    public Guid? VeterinarianId { get; private set; }
     public Guid PetId { get; private set; }
     public NotificationType Type { get; private set; }
     public string Title { get; private set; } = string.Empty;
@@ -23,7 +24,7 @@ public class Notification
     private Notification() { }
 
     public Notification(Guid ownerId, Guid petId, NotificationType type, NotificationContent content,
-        DateTimeOffset scheduledForUtc, SourceEventId sourceEventId)
+        DateTimeOffset scheduledForUtc, SourceEventId sourceEventId, Guid? veterinarianId = null)
     {
         if (ownerId == Guid.Empty || petId == Guid.Empty)
             throw new DomainValidationException("Owner and pet are required.");
@@ -32,6 +33,7 @@ public class Notification
 
         Id = Guid.NewGuid();
         OwnerId = ownerId;
+        VeterinarianId = veterinarianId == Guid.Empty ? throw new DomainValidationException("Veterinarian identifier is invalid.") : veterinarianId;
         PetId = petId;
         Type = type;
         ArgumentNullException.ThrowIfNull(content);

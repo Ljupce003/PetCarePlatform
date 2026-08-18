@@ -31,7 +31,16 @@ public class NotificationRepository : INotificationRepository
     {
         return await _context.Notifications
             .AsNoTracking()
-            .Where(item => item.OwnerId == ownerId)
+            .Where(item => item.OwnerId == ownerId && item.VeterinarianId == null)
+            .OrderByDescending(item => item.CreatedAtUtc)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Notification>> GetByVeterinarianIdAsync(Guid veterinarianId, CancellationToken cancellationToken)
+    {
+        return await _context.Notifications
+            .AsNoTracking()
+            .Where(item => item.VeterinarianId == veterinarianId)
             .OrderByDescending(item => item.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }

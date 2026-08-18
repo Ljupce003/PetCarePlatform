@@ -99,6 +99,9 @@ namespace TreatmentAndNotificationService.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("PetId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("VeterinarianId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTimeOffset>("ScheduledForUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -127,6 +130,8 @@ namespace TreatmentAndNotificationService.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.HasIndex("Status", "ScheduledForUtc");
+
+                    b.HasIndex("VeterinarianId");
 
                     b.ToTable("notifications", (string)null);
                 });

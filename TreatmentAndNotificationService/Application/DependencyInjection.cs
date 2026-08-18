@@ -4,6 +4,7 @@ using TreatmentAndNotificationService.Application.Commands;
 using TreatmentAndNotificationService.Application.Events;
 using TreatmentAndNotificationService.Application.Models;
 using TreatmentAndNotificationService.Application.Queries;
+using TreatmentAndNotificationService.Application.Services;
 
 namespace TreatmentAndNotificationService.Application;
 
@@ -18,9 +19,13 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<RecordVaccinationCommand, VaccinationDto>, RecordVaccinationCommandHandler>();
         services.AddScoped<ICommandHandler<CreateNotificationCommand, NotificationDto>, CreateNotificationCommandHandler>();
         services.AddScoped<IQueryHandler<GetMedicalHistoryQuery, IReadOnlyList<MedicalExaminationDto>>, GetMedicalHistoryQueryHandler>();
+        services.AddScoped<IQueryHandler<GetVeterinarianMedicalHistoryQuery, IReadOnlyList<MedicalExaminationDto>>, GetVeterinarianMedicalHistoryQueryHandler>();
         services.AddScoped<IQueryHandler<GetVaccinationHistoryQuery, IReadOnlyList<VaccinationDto>>, GetVaccinationHistoryQueryHandler>();
+        services.AddScoped<IQueryHandler<GetVeterinarianVaccinationHistoryQuery, IReadOnlyList<VaccinationDto>>, GetVeterinarianVaccinationHistoryQueryHandler>();
         services.AddScoped<IQueryHandler<GetNextVaccinationQuery, VaccinationDto?>, GetNextVaccinationQueryHandler>();
         services.AddScoped<IQueryHandler<GetOwnerNotificationsQuery, IReadOnlyList<NotificationDto>>, GetOwnerNotificationsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetVeterinarianNotificationsQuery, IReadOnlyList<NotificationDto>>, GetVeterinarianNotificationsQueryHandler>();
+        services.AddScoped<OwnerNotificationService>();
         return services;
     }
 }

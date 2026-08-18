@@ -276,8 +276,8 @@ Coverage is divided intentionally:
 - MCP tests cover protocol/authentication plus a real MCP → Treatment → PostgreSQL flow;
 - Gateway tests cover JWT validation, routing/transforms, bearer forwarding, all downstream clusters, and MCP Streamable HTTP behavior.
 
-Final Member 3 verification on 14 August 2026: **147 passed, 0 failed** (53 domain, 6
-worker, 37 Treatment API/Kafka, 11 Treatment Pact, 10 MCP, and 30 Gateway). The rebuilt Docker
+Final Member 3 verification after the Gateway OpenAPI addition: **154 passed, 0 failed** (53 domain,
+6 worker, 37 Treatment API/Kafka, 11 Treatment Pact, 10 MCP, and 37 Gateway). The rebuilt Docker
 runtime also passed both verification scripts.
 
 ## Design trade-offs

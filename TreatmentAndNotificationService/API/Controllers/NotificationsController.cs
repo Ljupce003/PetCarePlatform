@@ -4,6 +4,7 @@ using TreatmentAndNotificationService.Application.Abstractions;
 using TreatmentAndNotificationService.Application.Commands;
 using TreatmentAndNotificationService.Application.Models;
 using TreatmentAndNotificationService.Application.Queries;
+using TreatmentAndNotificationService.API.Security;
 
 namespace TreatmentAndNotificationService.API.Controllers;
 
@@ -14,12 +15,16 @@ public class NotificationsController : ControllerBase
 {
     private readonly ICommandHandler<CreateNotificationCommand, NotificationDto> _createNotification;
     private readonly IQueryHandler<GetOwnerNotificationsQuery, IReadOnlyList<NotificationDto>> _notifications;
+    private readonly IQueryHandler<GetVeterinarianNotificationsQuery, IReadOnlyList<NotificationDto>> _veterinarianNotifications;
 
     // ReSharper disable once ConvertToPrimaryConstructor
-    public NotificationsController(ICommandHandler<CreateNotificationCommand, NotificationDto> createNotification, IQueryHandler<GetOwnerNotificationsQuery, IReadOnlyList<NotificationDto>> notifications)
+    public NotificationsController(ICommandHandler<CreateNotificationCommand, NotificationDto> createNotification,
+        IQueryHandler<GetOwnerNotificationsQuery, IReadOnlyList<NotificationDto>> notifications,
+        IQueryHandler<GetVeterinarianNotificationsQuery, IReadOnlyList<NotificationDto>> veterinarianNotifications)
     {
         _createNotification = createNotification;
         _notifications = notifications;
+        _veterinarianNotifications = veterinarianNotifications;
     }
 
     /// <summary>Gets all notifications created for an owner, newest notification first.</summary>
@@ -32,8 +37,20 @@ public class NotificationsController : ControllerBase
     [Authorize(Roles = "owner,admin,service")]
     [ProducesResponseType(typeof(IReadOnlyList<NotificationDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public Task<IReadOnlyList<NotificationDto>> GetByOwner([FromRoute] Guid ownerId, CancellationToken ct) =>
-        _notifications.HandleAsync(new GetOwnerNotificationsQuery(ownerId), ct);
+    public async Task<ActionResult<IReadOnlyList<NotificationDto>>> GetByOwner([FromRoute] Guid ownerId, CancellationToken ct)
+    {
+        if (!User.IsInRole("service") && !UserOwnership.CanAccessOwner(User, ownerId)) return Forbid();
+        return Ok(await _notifications.HandleAsync(new GetOwnerNotificationsQuery(ownerId), ct));
+    }
+
+    /// <summary>Gets appointment activity delivered to a veterinarian.</summary>
+    [HttpGet("veterinarian/{veterinarianId:guid}")]
+    [Authorize(Roles = "veterinarian,admin")]
+    public async Task<ActionResult<IReadOnlyList<NotificationDto>>> GetByVeterinarian([FromRoute] Guid veterinarianId, CancellationToken ct)
+    {
+        if (!UserOwnership.CanAccessVeterinarian(User, veterinarianId)) return Forbid();
+        return Ok(await _veterinarianNotifications.HandleAsync(new GetVeterinarianNotificationsQuery(veterinarianId), ct));
+    }
 
     /// <summary>Creates a pending notification from a source event identifier.</summary>
     /// <param name="command">Owner, pet, notification type/content, schedule, and unique source event identifier.</param>
