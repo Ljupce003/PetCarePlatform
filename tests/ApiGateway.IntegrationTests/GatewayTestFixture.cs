@@ -179,6 +179,31 @@ public sealed class DownstreamTestServer : IAsyncDisposable
                 return;
             }
 
+            if (name != "mcp" && context.Request.Path == "/openapi/v1.json")
+            {
+                context.Response.StatusCode = StatusCodes.Status200OK;
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    openapi = "3.1.0",
+                    info = new { title = $"{name} service", version = "v1" },
+                    paths = new Dictionary<string, object>
+                    {
+                        ["/sample"] = new
+                        {
+                            get = new
+                            {
+                                responses = new Dictionary<string, object>
+                                {
+                                    ["200"] = new { description = "Success" }
+                                }
+                            }
+                        }
+                    }
+                }, context.RequestAborted);
+                return;
+            }
+
             if (name == "mcp" && context.Request.Path == "/mcp")
             {
                 context.Response.StatusCode = StatusCodes.Status200OK;

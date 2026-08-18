@@ -180,7 +180,7 @@ public sealed class TreatmentMcpEndToEndTests(TreatmentMcpEndToEndFixture fixtur
             audience: "petcare",
             claims:
             [
-                new Claim(JwtRegisteredClaimNames.Sub, "mcp-e2e-veterinarian"),
+                new Claim(JwtRegisteredClaimNames.Sub, VeterinarianId.ToString()),
                 new Claim(ClaimTypes.Role, "veterinarian")
             ],
             expires: DateTime.UtcNow.AddMinutes(10),
