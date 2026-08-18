@@ -25,6 +25,14 @@ public sealed class VeterinarianRepository(AppointmentDbContext dbContext) : IVe
     public async Task<Veterinarian?> GetByIdAsync(Guid veterinarianId, CancellationToken cancellationToken) =>
         await dbContext.Veterinarians.FirstOrDefaultAsync(veterinarian => veterinarian.VeterinarianId == veterinarianId, cancellationToken);
 
+    public async Task AddAsync(Veterinarian veterinarian, CancellationToken cancellationToken) =>
+        await dbContext.Veterinarians.AddAsync(veterinarian, cancellationToken);
+
+    public async Task<bool> HasAppointmentsAsync(Guid veterinarianId, CancellationToken cancellationToken) =>
+        await dbContext.Appointments.AnyAsync(appointment => appointment.VeterinarianId == veterinarianId, cancellationToken);
+
+    public void Remove(Veterinarian veterinarian) => dbContext.Veterinarians.Remove(veterinarian);
+
     public async Task<IReadOnlyList<Veterinarian>> SearchAsync(Guid? clinicId, string? specialization, CancellationToken cancellationToken)
     {
         var query = dbContext.Veterinarians.AsQueryable();
