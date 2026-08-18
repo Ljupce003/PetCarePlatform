@@ -135,7 +135,7 @@ services:
     container_name: petcare-pet-service
     build:
       context: .
-      dockerfile: PetService/PetService.Api/Dockerfile
+      dockerfile: src/Services/PetService/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
@@ -165,15 +165,17 @@ services:
     container_name: petcare-appointment-service
     build:
       context: .
-      dockerfile: AppointmentService/AppointmentService.Api/Dockerfile
+      dockerfile: src/Services/AppointmentService/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Database: "Host=appointment-db;Port=5432;Database=petcare_appointment;Username=postgres;Password=postgres"
-      PetService__BaseUrl: "http://pet-service:8080"
-      # TEMPORARY: Member 2 still needs to replace Appointment's placeholder service token and
-      # enable its real Pet client. Pet Service now supports the expected verification endpoint.
-      PetService__UseFakeVerification: "true"
+      PetService__BaseUrl: "http://pet-service/"
+      ServiceAuthentication__ClientId: "appointment-service"
+      ServiceAuthentication__ClientSecret: "appointment-secret"
+      KeycloakAdmin__Realm: "petcare"
+      KeycloakAdmin__Username: "admin"
+      KeycloakAdmin__Password: "admin"
       Consul__Address: "http://consul:8500"
       ServiceRegistration__Name: "appointment-service"
       ServiceRegistration__Id: "appointment-service-1"
@@ -207,7 +209,7 @@ services:
     container_name: petcare-treatment-and-notification-service
     build:
       context: .
-      dockerfile: TreatmentAndNotificationService/Dockerfile
+      dockerfile: src/Services/TreatmentService/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
@@ -240,7 +242,7 @@ services:
     container_name: petcare-mcp-server
     build:
       context: .
-      dockerfile: MCPServer/Dockerfile
+      dockerfile: src/Platform/MCPServer/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
@@ -270,7 +272,7 @@ services:
     container_name: petcare-api-gateway
     build:
       context: .
-      dockerfile: ApiGateway/Dockerfile
+      dockerfile: src/Platform/ApiGateway/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Docker
       ASPNETCORE_HTTP_PORTS: 8080
@@ -307,7 +309,7 @@ services:
     image: petcare/frontend:latest
     container_name: petcare-frontend
     build:
-      context: ./Frontend
+      context: ./src/Frontend
       dockerfile: Dockerfile
     ports:
       - "5173:80"
