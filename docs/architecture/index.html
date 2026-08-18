@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PetCare Platform Architecture</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background: light-dark(#f5f7fb, #111827);
+      color: light-dark(#172033, #e5e7eb);
+    }
+    body { margin: 0; padding: 32px; }
+    main { width: min(1500px, 100%); margin: 0 auto; }
+    header { display: flex; align-items: end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 20px; }
+    h1 { margin: 0 0 6px; font-size: clamp(24px, 3vw, 36px); }
+    p { margin: 0; color: light-dark(#526078, #aeb8ca); }
+    nav { display: flex; gap: 10px; flex-wrap: wrap; }
+    a { color: inherit; text-decoration: none; border: 1px solid light-dark(#b9c4d6, #4b5563); border-radius: 8px; padding: 10px 14px; background: light-dark(#ffffff, #1f2937); }
+    a:hover { border-color: light-dark(#7556b2, #a78bfa); }
+    object { display: block; width: 100%; aspect-ratio: 1600 / 1050; border: 1px solid light-dark(#cbd5e1, #374151); border-radius: 14px; background: #ffffff; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>PetCare Platform Architecture</h1>
+        <p>Course specification and README export</p>
+      </div>
+      <nav aria-label="Diagram downloads">
+        <a href="petcare-platform-architecture.svg" download>Download editable SVG</a>
+        <a href="petcare-platform-architecture.png" download>Download PNG</a>
+      </nav>
+    </header>
+    <object data="petcare-platform-architecture.svg" type="image/svg+xml" aria-label="PetCare Platform architecture diagram">
+      <img src="petcare-platform-architecture.png" alt="PetCare Platform architecture diagram">
+    </object>
+  </main>
+</body>
+</html>
