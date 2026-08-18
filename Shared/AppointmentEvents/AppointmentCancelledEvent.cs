@@ -5,5 +5,6 @@ public record AppointmentCancelledEvent(
     Guid AppointmentId,
     Guid PetId,
     Guid OwnerId,
+    Guid VeterinarianId,
     DateTimeOffset CancelledAtUtc,
     string? CancellationReason);
