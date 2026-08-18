@@ -1,6 +1,8 @@
 using AppointmentService.Application.Commands;
+using AppointmentService.Application.Abstractions;
 using AppointmentService.Application.Dtos;
 using AppointmentService.Application.Queries;
+using AppointmentService.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,7 +13,10 @@ namespace AppointmentService.Api.Controllers;
 [Authorize]
 public sealed class AvailabilitySlotsController(
     SearchAvailableSlotsHandler searchHandler,
-    CreateAvailabilitySlotHandler createHandler) : ControllerBase
+    CreateAvailabilitySlotHandler createHandler,
+    UpdateAvailabilitySlotHandler updateHandler,
+    DeleteAvailabilitySlotHandler deleteHandler,
+    IAvailabilitySlotRepository slots) : ControllerBase
 {
     /// <summary>
     /// GET /slots?veterinarianId=&amp;date=2026-08-10 — both filters are optional.
@@ -31,11 +36,34 @@ public sealed class AvailabilitySlotsController(
     /// a way to open slots beyond what was seeded, instead of only through the database seeder.
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "admin")]
+    [Authorize(Roles = "veterinarian,admin")]
     public async Task<ActionResult<AvailableSlotDto>> Create(
         CreateAvailabilitySlotCommand command, CancellationToken cancellationToken)
     {
+        if (!UserOwnership.CanAccessVeterinarian(User, command.VeterinarianId)) return Forbid();
         var result = await createHandler.HandleAsync(command, cancellationToken);
         return Created($"/slots/{result.AvailabilitySlotId}", result);
+    }
+
+    [HttpPut("{availabilitySlotId:guid}")]
+    [Authorize(Roles = "veterinarian,admin")]
+    public async Task<ActionResult<AvailableSlotDto>> Update([FromRoute] Guid availabilitySlotId,
+        [FromBody] UpdateAvailabilitySlotCommand command, CancellationToken cancellationToken)
+    {
+        var slot = await slots.GetByIdAsync(availabilitySlotId, cancellationToken);
+        if (slot is null) return NotFound();
+        if (!UserOwnership.CanAccessVeterinarian(User, slot.VeterinarianId)) return Forbid();
+        return Ok(await updateHandler.HandleAsync(command with { AvailabilitySlotId = availabilitySlotId }, cancellationToken));
+    }
+
+    [HttpDelete("{availabilitySlotId:guid}")]
+    [Authorize(Roles = "veterinarian,admin")]
+    public async Task<IActionResult> Delete([FromRoute] Guid availabilitySlotId, CancellationToken cancellationToken)
+    {
+        var slot = await slots.GetByIdAsync(availabilitySlotId, cancellationToken);
+        if (slot is null) return NotFound();
+        if (!UserOwnership.CanAccessVeterinarian(User, slot.VeterinarianId)) return Forbid();
+        await deleteHandler.HandleAsync(availabilitySlotId, cancellationToken);
+        return NoContent();
     }
 }

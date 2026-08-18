@@ -59,4 +59,13 @@ public class AvailabilitySlot
     /// rescheduled onto a different slot.
     /// </summary>
     public void Release() => IsBooked = false;
+
+    public void Update(DateTimeOffset startsAtUtc, DateTimeOffset endsAtUtc)
+    {
+        if (IsBooked) throw new InvalidOperationException("A booked slot cannot be changed.");
+        if (startsAtUtc <= DateTimeOffset.UtcNow) throw new SlotExpiredException(AvailabilitySlotId);
+        if (startsAtUtc >= endsAtUtc) throw new ArgumentException("Slot end must be after slot start.", nameof(endsAtUtc));
+        StartsAtUtc = startsAtUtc;
+        EndsAtUtc = endsAtUtc;
+    }
 }

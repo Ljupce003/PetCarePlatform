@@ -38,6 +38,11 @@ public static class AppointmentDbInitializer
     {
         if (await dbContext.Clinics.AnyAsync(cancellationToken))
         {
+            // Demo databases persist between Compose runs. Replenish availability when the
+            // original date-based seed has elapsed so the booking workflow never becomes a
+            // permanently empty screen after a few days.
+            await EnsureFutureAvailabilityAsync(dbContext, cancellationToken);
+            await EnsureLinkedVeterinarianIdentityAsync(dbContext, cancellationToken);
             return;
         }
 
@@ -50,7 +55,7 @@ public static class AppointmentDbInitializer
         var secondClinic = Clinic.Seed(DemoSecondClinicId, "North Animal Hospital", "Skopje", "Ul. Vasil Glavinov 10");
         dbContext.Clinics.AddRange(clinic, secondClinic);
 
-        var vet = Veterinarian.Seed(DemoVeterinarianId, clinic.ClinicId, "Dr. Ana Petrova", "General Practice", "VET-001");
+        var vet = Veterinarian.Seed(DemoVeterinarianId, clinic.ClinicId, "Dr. Alex Morgan", "General Practice", "VET-001");
         var secondVet = Veterinarian.Seed(DemoSecondVeterinarianId, clinic.ClinicId, "Dr. Marko Ivanov", "Surgery", "VET-002");
         var thirdVet = Veterinarian.Seed(DemoThirdVeterinarianId, secondClinic.ClinicId, "Dr. Elena Trajkova", "Dermatology", "VET-003");
         dbContext.Veterinarians.AddRange(vet, secondVet, thirdVet);
@@ -81,6 +86,46 @@ public static class AppointmentDbInitializer
             firstSlot.StartsAtUtc, firstSlot.EndsAtUtc, "Annual check-up");
         dbContext.Appointments.Add(demoAppointment);
 
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task EnsureFutureAvailabilityAsync(
+        AppointmentDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        if (await dbContext.AvailabilitySlots.AnyAsync(
+                slot => !slot.IsBooked && slot.StartsAtUtc > DateTimeOffset.UtcNow,
+                cancellationToken))
+        {
+            return;
+        }
+
+        var veterinarians = await dbContext.Veterinarians
+            .OrderBy(veterinarian => veterinarian.FullName)
+            .ToListAsync(cancellationToken);
+        var startDay = DateTime.UtcNow.Date.AddDays(1);
+        var slots = veterinarians.SelectMany(veterinarian => new[]
+        {
+            new AvailabilitySlot(veterinarian.VeterinarianId,
+                new DateTimeOffset(startDay.AddHours(9), TimeSpan.Zero),
+                new DateTimeOffset(startDay.AddHours(9).AddMinutes(30), TimeSpan.Zero)),
+            new AvailabilitySlot(veterinarian.VeterinarianId,
+                new DateTimeOffset(startDay.AddHours(14), TimeSpan.Zero),
+                new DateTimeOffset(startDay.AddHours(14).AddMinutes(30), TimeSpan.Zero))
+        }).ToList();
+
+        if (slots.Count == 0) return;
+        dbContext.AvailabilitySlots.AddRange(slots);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task EnsureLinkedVeterinarianIdentityAsync(
+        AppointmentDbContext dbContext, CancellationToken cancellationToken)
+    {
+        var veterinarian = await dbContext.Veterinarians.SingleOrDefaultAsync(
+            item => item.VeterinarianId == DemoVeterinarianId, cancellationToken);
+        if (veterinarian is null || veterinarian.FullName == "Dr. Alex Morgan") return;
+        veterinarian.Update("Dr. Alex Morgan", veterinarian.Specialization, veterinarian.LicenseNumber);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }
