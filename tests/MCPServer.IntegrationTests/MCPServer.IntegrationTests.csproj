@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\MCPServer\MCPServer.csproj" />
-    <ProjectReference Include="..\..\TreatmentAndNotificationService\TreatmentAndNotificationService.csproj"
+    <ProjectReference Include="..\..\src\Platform\MCPServer\MCPServer.csproj" />
+    <ProjectReference Include="..\..\src\Services\TreatmentService\TreatmentService.csproj"
                       Aliases="TreatmentService" />
   </ItemGroup>
 
