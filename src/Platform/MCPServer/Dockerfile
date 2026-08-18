@@ -5,11 +5,11 @@ EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["MCPServer/MCPServer.csproj", "MCPServer/"]
-RUN dotnet restore "MCPServer/MCPServer.csproj"
+WORKDIR /workspace
+COPY ["src/Platform/MCPServer/MCPServer.csproj", "src/Platform/MCPServer/"]
+RUN dotnet restore "src/Platform/MCPServer/MCPServer.csproj"
 COPY . .
-WORKDIR "/src/MCPServer"
+WORKDIR "/workspace/src/Platform/MCPServer"
 RUN dotnet build "MCPServer.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
