@@ -17,6 +17,8 @@ public static class DependencyInjection
         services.AddScoped<CancelAppointmentHandler>();
         services.AddScoped<RescheduleAppointmentHandler>();
         services.AddScoped<CreateAvailabilitySlotHandler>();
+        services.AddScoped<UpdateAvailabilitySlotHandler>();
+        services.AddScoped<DeleteAvailabilitySlotHandler>();
 
         services.AddScoped<SearchClinicsHandler>();
         services.AddScoped<SearchVeterinariansHandler>();

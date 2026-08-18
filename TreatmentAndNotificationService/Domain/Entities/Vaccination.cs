@@ -53,6 +53,15 @@ public class Vaccination
         return events;
     }
 
+    public void Update(VaccineName vaccineName, VaccinationSchedule schedule, string? batchNumber)
+    {
+        VaccineName = vaccineName ?? throw new ArgumentNullException(nameof(vaccineName));
+        ArgumentNullException.ThrowIfNull(schedule);
+        AdministeredOn = schedule.AdministeredOn;
+        NextDueOn = schedule.NextDueOn;
+        BatchNumber = NormalizeBatchNumber(batchNumber);
+    }
+
     private static string? NormalizeBatchNumber(string? value)
     {
         var normalized = string.IsNullOrWhiteSpace(value) ? null : value.Trim();

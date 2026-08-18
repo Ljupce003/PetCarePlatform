@@ -10,6 +10,7 @@ public sealed class TreatmentAuthorizationTests : IAsyncLifetime
 {
     private static readonly Guid PetId = Guid.Parse("a1111111-1111-1111-1111-111111111111");
     private static readonly Guid OwnerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly Guid VeterinarianId = Guid.Parse("b1111111-1111-1111-1111-111111111111");
     private readonly TreatmentApiFactory _factory;
     private HttpClient _anonymousClient = null!;
 
@@ -41,9 +42,9 @@ public sealed class TreatmentAuthorizationTests : IAsyncLifetime
     [Fact]
     public async Task MedicalRead_WithOwnerToken_Returns200()
     {
-        using var ownerClient = _factory.CreateAuthenticatedClient("owner");
+        using var ownerClient = _factory.CreateAuthenticatedClient("owner", OwnerId);
 
-        var response = await ownerClient.GetAsync($"/api/treatments/pet/{PetId}");
+        var response = await ownerClient.GetAsync($"/api/treatments/pet/{PetId}?ownerId={OwnerId}");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -53,9 +54,13 @@ public sealed class TreatmentAuthorizationTests : IAsyncLifetime
     [InlineData("service")]
     public async Task RecordExamination_WithoutVeterinarianOrAdminRole_Returns403(string role)
     {
-        using var client = _factory.CreateAuthenticatedClient(role);
+        using var client = _factory.CreateAuthenticatedClient(
+            role, role == "veterinarian" ? VeterinarianId : null);
 
-        var response = await client.PostAsJsonAsync("/api/treatments", new { });
+        var response = await client.PostAsJsonAsync("/api/treatments", new
+        {
+            veterinarianId = VeterinarianId
+        });
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -65,9 +70,13 @@ public sealed class TreatmentAuthorizationTests : IAsyncLifetime
     [InlineData("admin")]
     public async Task RecordExamination_WithAuthorizedRole_ReachesValidation(string role)
     {
-        using var client = _factory.CreateAuthenticatedClient(role);
+        using var client = _factory.CreateAuthenticatedClient(
+            role, role == "veterinarian" ? VeterinarianId : null);
 
-        var response = await client.PostAsJsonAsync("/api/treatments", new { });
+        var response = await client.PostAsJsonAsync("/api/treatments", new
+        {
+            veterinarianId = VeterinarianId
+        });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

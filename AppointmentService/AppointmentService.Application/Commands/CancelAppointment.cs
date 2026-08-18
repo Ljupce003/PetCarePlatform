@@ -68,6 +68,7 @@ public sealed class CancelAppointmentHandler(
                     appointment.AppointmentId,
                     appointment.PetId,
                     appointment.OwnerId,
+                    appointment.VeterinarianId,
                     DateTimeOffset.UtcNow,
                     appointment.CancellationReason),
                 cancellationToken);

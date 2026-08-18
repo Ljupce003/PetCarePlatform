@@ -6,5 +6,11 @@ public enum NotificationType
     AppointmentCancelled = 2,
     AppointmentRescheduled = 3,
     FollowUpReminder = 4,
-    VaccinationReminder = 5
+    VaccinationReminder = 5,
+    MedicalRecordCreated = 6,
+    MedicalRecordUpdated = 7,
+    MedicalRecordDeleted = 8,
+    VaccinationRecorded = 9,
+    VaccinationUpdated = 10,
+    VaccinationDeleted = 11
 }

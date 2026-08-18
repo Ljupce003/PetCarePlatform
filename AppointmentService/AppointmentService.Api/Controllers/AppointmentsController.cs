@@ -1,6 +1,8 @@
 using AppointmentService.Application.Commands;
+using AppointmentService.Application.Abstractions;
 using AppointmentService.Application.Dtos;
 using AppointmentService.Application.Queries;
+using AppointmentService.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,15 +15,40 @@ public sealed class AppointmentsController(
     ScheduleAppointmentHandler scheduleHandler,
     CancelAppointmentHandler cancelHandler,
     RescheduleAppointmentHandler rescheduleHandler,
-    GetUpcomingAppointmentsHandler upcomingHandler) : ControllerBase
+    GetUpcomingAppointmentsHandler upcomingHandler,
+    IAppointmentRepository appointments) : ControllerBase
 {
     /// <summary>GET /appointments/upcoming?ownerId=... — upcoming (still-scheduled) appointments for an owner.</summary>
     [HttpGet("upcoming")]
+    [Authorize(Roles = "owner,admin")]
     public async Task<ActionResult<IReadOnlyList<AppointmentDto>>> GetUpcoming(
         [FromQuery] Guid ownerId, CancellationToken cancellationToken)
     {
+        if (!UserOwnership.CanAccessOwner(User, ownerId)) return Forbid();
         var result = await upcomingHandler.HandleAsync(new GetUpcomingAppointmentsQuery(ownerId), cancellationToken);
         return Ok(result);
+    }
+
+    /// <summary>Gets a veterinarian's own upcoming schedule.</summary>
+    [HttpGet("upcoming/veterinarian/{veterinarianId:guid}")]
+    [Authorize(Roles = "veterinarian,admin")]
+    public async Task<ActionResult<IReadOnlyList<AppointmentDto>>> GetVeterinarianUpcoming(
+        Guid veterinarianId, CancellationToken cancellationToken)
+    {
+        if (!UserOwnership.CanAccessVeterinarian(User, veterinarianId)) return Forbid();
+        return Ok((await appointments.GetUpcomingByVeterinarianAsync(veterinarianId, cancellationToken))
+            .Select(appointment => appointment.ToDto()).ToList());
+    }
+
+    /// <summary>Gets a veterinarian's completed or past scheduled appointments for clinical documentation.</summary>
+    [HttpGet("clinical/veterinarian/{veterinarianId:guid}")]
+    [Authorize(Roles = "veterinarian,admin")]
+    public async Task<ActionResult<IReadOnlyList<AppointmentDto>>> GetVeterinarianClinicalHistory(
+        Guid veterinarianId, CancellationToken cancellationToken)
+    {
+        if (!UserOwnership.CanAccessVeterinarian(User, veterinarianId)) return Forbid();
+        return Ok((await appointments.GetClinicalHistoryByVeterinarianAsync(veterinarianId, cancellationToken))
+            .Select(appointment => appointment.ToDto()).ToList());
     }
 
     /// <summary>
@@ -34,6 +61,7 @@ public sealed class AppointmentsController(
     public async Task<ActionResult<AppointmentDto>> Schedule(
         ScheduleAppointmentCommand command, CancellationToken cancellationToken)
     {
+        if (!UserOwnership.CanAccessOwner(User, command.OwnerId)) return Forbid();
         var result = await scheduleHandler.HandleAsync(command, cancellationToken);
         return Created($"/appointments/{result.AppointmentId}", result);
     }
@@ -48,6 +76,9 @@ public sealed class AppointmentsController(
     public async Task<ActionResult<AppointmentDto>> Cancel(
         Guid id, [FromQuery] string? reason, CancellationToken cancellationToken)
     {
+        var appointment = await appointments.GetByIdAsync(id, cancellationToken);
+        if (appointment is null) return NotFound();
+        if (!UserOwnership.CanAccessOwner(User, appointment.OwnerId)) return Forbid();
         var result = await cancelHandler.HandleAsync(new CancelAppointmentCommand(id, reason), cancellationToken);
         return Ok(result);
     }
@@ -58,6 +89,9 @@ public sealed class AppointmentsController(
     public async Task<ActionResult<AppointmentDto>> Reschedule(
         Guid id, RescheduleAppointmentRequest request, CancellationToken cancellationToken)
     {
+        var appointment = await appointments.GetByIdAsync(id, cancellationToken);
+        if (appointment is null) return NotFound();
+        if (!UserOwnership.CanAccessOwner(User, appointment.OwnerId)) return Forbid();
         var result = await rescheduleHandler.HandleAsync(
             new RescheduleAppointmentCommand(id, request.NewAvailabilitySlotId), cancellationToken);
         return Ok(result);

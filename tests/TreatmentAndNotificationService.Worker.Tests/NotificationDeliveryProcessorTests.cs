@@ -125,6 +125,11 @@ public sealed class NotificationDeliveryProcessorTests
         public DateTimeOffset? RequestedAtUtc { get; private set; }
         public int? RequestedBatchSize { get; private set; }
 
+        public Task<IReadOnlyList<Notification>> GetByVeterinarianIdAsync(Guid veterinarianId, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<IReadOnlyList<Notification>> GetDuePendingAsync(
             DateTimeOffset nowUtc, int take, CancellationToken cancellationToken)
         {

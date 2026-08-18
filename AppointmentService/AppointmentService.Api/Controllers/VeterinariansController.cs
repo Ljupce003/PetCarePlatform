@@ -1,5 +1,7 @@
 using AppointmentService.Application.Dtos;
 using AppointmentService.Application.Queries;
+using AppointmentService.Application.Abstractions;
+using AppointmentService.Api.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +12,9 @@ namespace AppointmentService.Api.Controllers;
 [Authorize]
 public sealed class VeterinariansController(
     SearchVeterinariansHandler searchHandler,
-    FindAvailableVeterinariansHandler findAvailableHandler) : ControllerBase
+    FindAvailableVeterinariansHandler findAvailableHandler,
+    IVeterinarianRepository veterinarians,
+    IUnitOfWork unitOfWork) : ControllerBase
 {
     /// <summary>GET /veterinarians?clinicId=&amp;specialization= — both filters are optional.</summary>
     [HttpGet]
@@ -38,4 +42,27 @@ public sealed class VeterinariansController(
             new FindAvailableVeterinariansQuery(date, location, specialization), cancellationToken);
         return Ok(result);
     }
+
+    [HttpGet("{veterinarianId:guid}")]
+    [Authorize(Roles = "veterinarian,admin")]
+    public async Task<ActionResult<VeterinarianDto>> GetById(Guid veterinarianId, CancellationToken cancellationToken)
+    {
+        if (!UserOwnership.CanAccessVeterinarian(User, veterinarianId)) return Forbid();
+        var veterinarian = await veterinarians.GetByIdAsync(veterinarianId, cancellationToken);
+        return veterinarian is null ? NotFound() : Ok(veterinarian.ToDto());
+    }
+
+    [HttpPut("{veterinarianId:guid}")]
+    [Authorize(Roles = "veterinarian,admin")]
+    public async Task<ActionResult<VeterinarianDto>> Update(Guid veterinarianId, UpdateVeterinarianProfileRequest request, CancellationToken cancellationToken)
+    {
+        if (!UserOwnership.CanAccessVeterinarian(User, veterinarianId)) return Forbid();
+        var veterinarian = await veterinarians.GetByIdAsync(veterinarianId, cancellationToken);
+        if (veterinarian is null) return NotFound();
+        veterinarian.Update(request.FullName, request.Specialization, veterinarian.LicenseNumber);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+        return Ok(veterinarian.ToDto());
+    }
 }
+
+public sealed record UpdateVeterinarianProfileRequest(string FullName, string Specialization);

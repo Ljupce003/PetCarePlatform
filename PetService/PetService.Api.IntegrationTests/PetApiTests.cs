@@ -18,9 +18,9 @@ public sealed class PetApiTests(PetServiceApiFactory factory) : IClassFixture<Pe
     public async Task OwnerAndPetCrudWorkflow_UsesTheRealApiApplicationAndPersistenceLayers()
     {
         await factory.ResetDatabaseAsync(seedDemoData: false);
-        using var client = factory.CreateAuthenticatedClient("owner");
+        using var adminClient = factory.CreateAuthenticatedClient("admin");
 
-        var ownerResponse = await client.PostAsJsonAsync("/owners", new
+        var ownerResponse = await adminClient.PostAsJsonAsync("/owners", new
         {
             ownerName = "Test Owner",
             email = "test.owner@example.com",
@@ -30,6 +30,7 @@ public sealed class PetApiTests(PetServiceApiFactory factory) : IClassFixture<Pe
         Assert.Equal(HttpStatusCode.Created, ownerResponse.StatusCode);
         var owner = await ownerResponse.Content.ReadFromJsonAsync<OwnerDto>(Json);
         Assert.NotNull(owner);
+        using var client = factory.CreateAuthenticatedClient("owner", owner!.OwnerId);
 
         var petResponse = await client.PostAsJsonAsync("/pets", new
         {
@@ -79,15 +80,15 @@ public sealed class PetApiTests(PetServiceApiFactory factory) : IClassFixture<Pe
 
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/pets/{pet.PetId}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/pets/{pet.PetId}")).StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/owners/{owner.OwnerId}")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/owners/{owner.OwnerId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await adminClient.DeleteAsync($"/owners/{owner.OwnerId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await adminClient.GetAsync($"/owners/{owner.OwnerId}")).StatusCode);
     }
 
     [Fact]
     public async Task ValidationAndMissingOwner_ReturnMeaningfulClientErrors()
     {
         await factory.ResetDatabaseAsync(seedDemoData: false);
-        using var client = factory.CreateAuthenticatedClient("owner");
+        using var client = factory.CreateAuthenticatedClient("admin");
 
         var invalidOwner = await client.PostAsJsonAsync("/owners", new
         {

@@ -54,10 +54,12 @@ public sealed class PetServiceApiFactory : WebApplicationFactory<Program>
         });
     }
 
-    public HttpClient CreateAuthenticatedClient(string role)
+    public HttpClient CreateAuthenticatedClient(string role, Guid? subjectId = null)
     {
         var client = CreateClient();
         client.DefaultRequestHeaders.Add(TestAuthenticationHandler.RoleHeader, role);
+        if (subjectId is not null)
+            client.DefaultRequestHeaders.Add(TestAuthenticationHandler.SubjectHeader, subjectId.Value.ToString());
         return client;
     }
 
@@ -112,6 +114,7 @@ internal sealed class TestAuthenticationHandler(
 {
     public const string TestScheme = "PetServiceTests";
     public const string RoleHeader = "X-Test-Role";
+    public const string SubjectHeader = "X-Test-Subject";
 
     protected override Task<AuthenticateResult> HandleAuthenticateAsync()
     {
@@ -120,9 +123,13 @@ internal sealed class TestAuthenticationHandler(
             return Task.FromResult(AuthenticateResult.NoResult());
         }
 
+        var subject = Request.Headers.TryGetValue(SubjectHeader, out var subjectHeader)
+            ? subjectHeader.ToString()
+            : $"{role}-test-user";
         var identity = new ClaimsIdentity(
             [
-                new Claim(ClaimTypes.NameIdentifier, $"{role}-test-user"),
+                new Claim(ClaimTypes.NameIdentifier, subject),
+                new Claim("sub", subject),
                 new Claim(ClaimTypes.Role, role.ToString())
             ],
             TestScheme);

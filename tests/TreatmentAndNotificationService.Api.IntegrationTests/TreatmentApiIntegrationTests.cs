@@ -70,13 +70,15 @@ public sealed class TreatmentApiIntegrationTests : IAsyncLifetime
         var persisted = await _factory.WithDbContextAsync(async db => new
         {
             Examination = await db.MedicalExaminations.SingleAsync(),
-            Reminder = await db.Notifications.SingleAsync()
+            Reminder = await db.Notifications.SingleAsync(item => item.Type == NotificationType.FollowUpReminder),
+            OwnerActivity = await db.Notifications.SingleAsync(item => item.Type == NotificationType.MedicalRecordCreated)
         });
         Assert.Equal(created.Id, persisted.Examination.Id);
         Assert.Equal("Acute otitis", persisted.Examination.Diagnosis.Value);
         Assert.Equal(NotificationType.FollowUpReminder, persisted.Reminder.Type);
         Assert.Equal(NotificationStatus.Pending, persisted.Reminder.Status);
         Assert.Equal($"examination:{created.Id}", persisted.Reminder.SourceEventId.Value);
+        Assert.Equal(OwnerId, persisted.OwnerActivity.OwnerId);
 
         var history = await _client.GetFromJsonAsync<List<MedicalExaminationDto>>(
             $"/api/treatments/pet/{PetId}", JsonDefaults.CaseInsensitive);
@@ -111,7 +113,8 @@ public sealed class TreatmentApiIntegrationTests : IAsyncLifetime
         var created = await response.Content.ReadFromJsonAsync<VaccinationDto>(JsonDefaults.CaseInsensitive);
         Assert.NotNull(created);
 
-        var reminder = await _factory.WithDbContextAsync(db => db.Notifications.SingleAsync());
+        var reminder = await _factory.WithDbContextAsync(db => db.Notifications
+            .SingleAsync(item => item.Type == NotificationType.VaccinationReminder));
         Assert.Equal(NotificationType.VaccinationReminder, reminder.Type);
         Assert.Equal($"vaccination:{created!.Id}", reminder.SourceEventId.Value);
 
@@ -206,16 +209,20 @@ public sealed class TreatmentApiIntegrationTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task RecordExamination_WithoutFollowUp_DoesNotCreateNotification_AndHistoryIsNewestFirst()
+    public async Task RecordExamination_WithoutFollowUp_DoesNotCreateReminder_AndHistoryIsNewestFirst()
     {
         var older = await RecordExaminationAsync(DateTimeOffset.UtcNow.AddDays(-2), followUp: null);
         var newer = await RecordExaminationAsync(DateTimeOffset.UtcNow.AddDays(-1), followUp: null);
 
-        var notifications = await CountAsync(db => db.Notifications);
+        var reminders = await CountAsync(db => db.Notifications.Where(item =>
+            item.Type == NotificationType.FollowUpReminder ||
+            item.Type == NotificationType.VaccinationReminder));
         var history = await _client.GetFromJsonAsync<List<MedicalExaminationDto>>(
             $"/api/treatments/pet/{PetId}", JsonDefaults.CaseInsensitive);
 
-        Assert.Equal(0, notifications);
+        Assert.Equal(0, reminders);
+        Assert.Equal(2, await CountAsync(db => db.Notifications.Where(item =>
+            item.Type == NotificationType.MedicalRecordCreated)));
         Assert.Equal([newer.Id, older.Id], history!.Select(item => item.Id).ToArray());
     }
 
@@ -230,7 +237,10 @@ public sealed class TreatmentApiIntegrationTests : IAsyncLifetime
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.Equal(1, await CountAsync(db => db.Vaccinations));
-        Assert.Equal(0, await CountAsync(db => db.Notifications));
+        Assert.Equal(0, await CountAsync(db => db.Notifications.Where(item =>
+            item.Type == NotificationType.VaccinationReminder)));
+        Assert.Equal(1, await CountAsync(db => db.Notifications.Where(item =>
+            item.Type == NotificationType.VaccinationRecorded)));
     }
 
     [Fact]
@@ -246,6 +256,8 @@ public sealed class TreatmentApiIntegrationTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Created, vaccinationResponse.StatusCode);
 
         var reminders = await _factory.WithDbContextAsync(db => db.Notifications
+            .Where(item => item.Type == NotificationType.FollowUpReminder ||
+                item.Type == NotificationType.VaccinationReminder)
             .OrderBy(item => item.Type)
             .ToListAsync());
         Assert.Equal(2, reminders.Count);

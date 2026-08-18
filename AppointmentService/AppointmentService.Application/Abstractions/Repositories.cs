@@ -36,6 +36,7 @@ public interface IAvailabilitySlotRepository
         Guid? veterinarianId, DateOnly? date, CancellationToken cancellationToken);
 
     Task AddAsync(AvailabilitySlot slot, CancellationToken cancellationToken);
+    void Remove(AvailabilitySlot slot);
 }
 
 public interface IAppointmentRepository
@@ -43,6 +44,10 @@ public interface IAppointmentRepository
     Task<Appointment?> GetByIdAsync(Guid appointmentId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Appointment>> GetUpcomingByOwnerAsync(Guid ownerId, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<Appointment>> GetUpcomingByVeterinarianAsync(Guid veterinarianId, CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<Appointment>> GetClinicalHistoryByVeterinarianAsync(Guid veterinarianId, CancellationToken cancellationToken);
 
     Task AddAsync(Appointment appointment, CancellationToken cancellationToken);
 }

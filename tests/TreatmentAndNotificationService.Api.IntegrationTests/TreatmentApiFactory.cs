@@ -48,14 +48,15 @@ public sealed class TreatmentApiFactory(string connectionString) : WebApplicatio
         return await action(scope.ServiceProvider.GetRequiredService<TreatmentDbContext>());
     }
 
-    public HttpClient CreateAuthenticatedClient(string role)
+    public HttpClient CreateAuthenticatedClient(string role, Guid? subjectId = null)
     {
         var client = CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateToken(role));
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer", CreateToken(role, subjectId?.ToString()));
         return client;
     }
 
-    private static string CreateToken(string role)
+    private static string CreateToken(string role, string? subject = null)
     {
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSigningKey)),
@@ -65,7 +66,7 @@ public sealed class TreatmentApiFactory(string connectionString) : WebApplicatio
             audience: JwtAudience,
             claims:
             [
-                new Claim(JwtRegisteredClaimNames.Sub, $"{role}-integration-test"),
+                new Claim(JwtRegisteredClaimNames.Sub, subject ?? $"{role}-integration-test"),
                 new Claim(ClaimTypes.Role, role)
             ],
             expires: DateTime.UtcNow.AddMinutes(10),

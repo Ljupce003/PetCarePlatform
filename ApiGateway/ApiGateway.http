@@ -13,6 +13,20 @@ grant_type=password&client_id=petcare-demo&username=vet1&password=Vet123!
 ### Gateway health does not require a token
 GET {{gateway}}/health
 
+### Open the machine-readable Gateway API catalog (anonymous)
+GET {{gateway}}/openapi
+
+### OpenAPI documents exposed by the Gateway (anonymous)
+GET {{gateway}}/openapi/pet.json
+
+###
+GET {{gateway}}/openapi/appointment.json
+
+###
+GET {{gateway}}/openapi/treatment.json
+
+### Browser Swagger UI: http://localhost:7000/swagger
+
 ### Record an examination through Gateway -> Treatment Service
 POST {{gateway}}/treatment/api/treatments
 Authorization: Bearer {{petcare_token}}

@@ -73,12 +73,12 @@ public sealed class AppointmentEventConsumerIntegrationTests : IAsyncLifetime
         await PublishAsync(scheduledEventId, scheduled); // Kafka redelivery/replay of the same occurrence.
         await PublishAsync(rescheduledEventId, rescheduled);
 
-        var notifications = await WaitForNotificationCountAsync(2);
+        var notifications = await WaitForNotificationCountAsync(4);
 
-        Assert.Equal(2, notifications.Count);
-        Assert.Single(notifications, item => item.Type == NotificationType.AppointmentScheduled);
-        Assert.Single(notifications, item => item.Type == NotificationType.AppointmentRescheduled);
-        Assert.Equal(2, notifications.Select(item => item.SourceEventId.Value).Distinct().Count());
+        Assert.Equal(4, notifications.Count);
+        Assert.Equal(2, notifications.Count(item => item.Type == NotificationType.AppointmentScheduled));
+        Assert.Equal(2, notifications.Count(item => item.Type == NotificationType.AppointmentRescheduled));
+        Assert.Equal(4, notifications.Select(item => item.SourceEventId.Value).Distinct().Count());
     }
 
     [Fact]
@@ -93,11 +93,12 @@ public sealed class AppointmentEventConsumerIntegrationTests : IAsyncLifetime
             AppointmentId,
             PetId,
             OwnerId,
+            VeterinarianId,
             DateTimeOffset.UtcNow,
             "Owner request"));
 
-        var notifications = await WaitForNotificationCountAsync(1);
-        Assert.Equal(NotificationType.AppointmentCancelled, notifications.Single().Type);
+        var notifications = await WaitForNotificationCountAsync(2);
+        Assert.All(notifications, item => Assert.Equal(NotificationType.AppointmentCancelled, item.Type));
 
         using var deadLetterConsumer = new ConsumerBuilder<string, string>(new ConsumerConfig
         {

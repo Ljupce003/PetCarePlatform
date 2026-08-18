@@ -87,6 +87,8 @@ public sealed class AvailabilitySlotRepository(AppointmentDbContext dbContext) :
 
     public async Task AddAsync(AvailabilitySlot slot, CancellationToken cancellationToken) =>
         await dbContext.AvailabilitySlots.AddAsync(slot, cancellationToken);
+
+    public void Remove(AvailabilitySlot slot) => dbContext.AvailabilitySlots.Remove(slot);
 }
 
 public sealed class AppointmentRepository(AppointmentDbContext dbContext) : IAppointmentRepository
@@ -100,6 +102,21 @@ public sealed class AppointmentRepository(AppointmentDbContext dbContext) : IApp
                 && appointment.Status == AppointmentStatus.Scheduled
                 && appointment.StartsAtUtc >= DateTimeOffset.UtcNow)
             .OrderBy(appointment => appointment.StartsAtUtc)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Appointment>> GetUpcomingByVeterinarianAsync(Guid veterinarianId, CancellationToken cancellationToken) =>
+        await dbContext.Appointments
+            .Where(appointment => appointment.VeterinarianId == veterinarianId
+                && appointment.Status == AppointmentStatus.Scheduled
+                && appointment.StartsAtUtc >= DateTimeOffset.UtcNow)
+            .OrderBy(appointment => appointment.StartsAtUtc)
+            .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<Appointment>> GetClinicalHistoryByVeterinarianAsync(Guid veterinarianId, CancellationToken cancellationToken) =>
+        await dbContext.Appointments
+            .Where(appointment => appointment.VeterinarianId == veterinarianId
+                && appointment.Status != AppointmentStatus.Cancelled)
+            .OrderByDescending(appointment => appointment.StartsAtUtc)
             .ToListAsync(cancellationToken);
 
     public async Task AddAsync(Appointment appointment, CancellationToken cancellationToken) =>
