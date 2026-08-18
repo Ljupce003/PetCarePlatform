@@ -36,6 +36,8 @@ public sealed class PetProviderPactTests(PetServiceApiFactory factory) : IClassF
             .WithHttpEndpoint(proxy.BaseAddress)
             .WithFileSource(new FileInfo(Path.Combine(
                 FindRepositoryRoot().FullName,
+                "tests",
+                "Contracts",
                 "pacts",
                 "Appointment Service-Pet Service.json")))
             .WithFilter(interactionDescription, null!)
