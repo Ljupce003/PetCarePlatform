@@ -36,9 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IAvailabilitySlotRepository, AvailabilitySlotRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
-        // JwtTokenService issues the locally-signed service-to-service token
-        // LocalServiceAccessTokenProvider (below) hands out for calls to Pet Service. Human login
-        // (POST /auth/login) doesn't use this at all -- see KeycloakAuthClient. See Security/JwtOptions.cs.
+        // Local JWTs are only used by the isolated WebApplicationFactory test environment.
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.AddSingleton<JwtTokenService>();
 
@@ -51,11 +49,8 @@ public static class DependencyInjection
             client.Timeout = TimeSpan.FromSeconds(10);
         });
 
-        AddPetServiceClient(services, configuration);
-
-        // Registers this instance in Consul on startup (deregisters on shutdown) and exposes
-        // IConsulServiceResolver for looking up other services once they register too.
         services.AddPetCareConsul(configuration);
+        AddPetServiceClient(services, configuration);
 
         // Publishes AppointmentScheduled/Cancelled/Rescheduled to Kafka (topic: petcare.appointments)
         // so Treatment & Notification Service can react to them.
@@ -67,34 +62,37 @@ public static class DependencyInjection
 
     private static void AddPetServiceClient(IServiceCollection services, IConfiguration configuration)
     {
-        // Pet Service doesn't have its /api/pets/{id}/exists endpoint (or any seeded pets/owners)
-        // yet, so booking through this service's own Swagger would otherwise always fail
-        // verification. PetService:UseFakeVerification (true in appsettings.Development.json,
-        // false everywhere else) swaps in FakePetVerificationClient instead -- delete this switch
-        // once Pet Service's real endpoint exists.
-        if (bool.TryParse(configuration["PetService:UseFakeVerification"], out var useFakeVerification) && useFakeVerification)
-        {
-            services.AddSingleton<IPetVerificationClient, FakePetVerificationClient>();
-            return;
-        }
-
         var petServiceBaseUrl = configuration["PetService:BaseUrl"]
             ?? throw new InvalidOperationException(
                 "PetService:BaseUrl is not configured. Set PetService:BaseUrl in appsettings or the " +
                 "PetService__BaseUrl environment variable.");
 
-        // Attaches a real (locally-signed) token to every Pet Service call — see
-        // LocalServiceAccessTokenProvider for what changes once Keycloak exists.
-        services.AddSingleton<IServiceAccessTokenProvider, LocalServiceAccessTokenProvider>();
+        services.AddHttpClient("keycloak-service-token", (provider, client) =>
+        {
+            var authority = provider.GetRequiredService<IConfiguration>()["Jwt:Authority"]?.TrimEnd('/')
+                ?? throw new InvalidOperationException("Jwt:Authority is required.");
+            client.BaseAddress = new Uri(authority + "/");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+
+        services.AddHttpClient<KeycloakAdminClient>((provider, client) =>
+        {
+            var authority = provider.GetRequiredService<IConfiguration>()["Jwt:Authority"]?.TrimEnd('/')
+                ?? throw new InvalidOperationException("Jwt:Authority is required.");
+            var realmsIndex = authority.IndexOf("/realms/", StringComparison.OrdinalIgnoreCase);
+            var keycloakBaseUrl = realmsIndex >= 0 ? authority[..realmsIndex] : authority;
+            client.BaseAddress = new Uri(keycloakBaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        });
+        services.AddSingleton<IServiceAccessTokenProvider, KeycloakServiceAccessTokenProvider>();
         services.AddTransient<ServiceAccessTokenHandler>();
 
         services.AddHttpClient<IPetVerificationClient, PetServiceClient>(client =>
             {
                 client.BaseAddress = new Uri(petServiceBaseUrl);
             })
+            .AddHttpMessageHandler<ServiceDiscoveryHandler>()
             .AddHttpMessageHandler<ServiceAccessTokenHandler>()
-            // Retry with backoff + circuit breaker + timeout for transient Pet Service failures,
-            // instead of a single hand-rolled retry loop.
             .AddStandardResilienceHandler();
     }
 }

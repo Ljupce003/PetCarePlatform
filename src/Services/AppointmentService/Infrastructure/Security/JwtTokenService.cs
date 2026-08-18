@@ -7,11 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 namespace AppointmentService.Infrastructure.Security;
 
 /// <summary>
-/// Issues locally-signed, HMAC-SHA256 JWTs for the two places this service doesn't go through
-/// real Keycloak: <see cref="LocalServiceAccessTokenProvider"/>'s service-to-service calls to Pet
-/// Service (always), and <c>AuthController.Login</c>'s "Testing"-environment branch (CI has no
-/// live Keycloak -- see AppointmentService.Api.IntegrationTests). Everywhere else, human login
-/// goes through <see cref="KeycloakAuthClient"/> against the real Keycloak realm instead.
+/// Issues a local JWT only for WebApplicationFactory integration tests. Runtime user and
+/// service-to-service authentication both use Keycloak.
 /// </summary>
 public sealed class JwtTokenService(IOptions<JwtOptions> options)
 {
@@ -21,14 +18,6 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options)
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.UniqueName, username),
             new Claim(ClaimTypes.Role, role)
-        ]);
-
-    /// <summary>Issues a locally-signed service-to-service token for <see cref="LocalServiceAccessTokenProvider"/>.</summary>
-    public string IssueServiceToken(string clientId) =>
-        CreateToken([
-            new Claim(JwtRegisteredClaimNames.Sub, clientId),
-            new Claim("client_id", clientId),
-            new Claim(ClaimTypes.Role, "service")
         ]);
 
     private string CreateToken(IEnumerable<Claim> claims)
