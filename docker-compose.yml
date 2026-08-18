@@ -303,6 +303,20 @@ services:
       mcp-server:
         condition: service_started
 
+  frontend:
+    image: petcare/frontend:latest
+    container_name: petcare-frontend
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      api-gateway:
+        condition: service_started
+
 volumes:
   pet-db-data:
   appointment-db-data:
