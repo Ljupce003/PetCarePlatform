@@ -4,6 +4,7 @@ using PetService.Application.Commands;
 using PetService.Application.Dtos;
 using PetService.Application.Queries;
 using PetService.Application.Requests;
+using PetService.Api.Security;
 
 namespace PetService.Api.Controllers;
 
@@ -22,6 +23,7 @@ public class OwnersController(
     /// <response code="201">The owner was created.</response>
     /// <response code="400">The owner data is invalid.</response>
     [HttpPost]
+    [Authorize(Roles = "admin")]
     [ProducesResponseType<OwnerDto>(StatusCodes.Status201Created)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<OwnerDto>> Create(
@@ -43,6 +45,7 @@ public class OwnersController(
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OwnerDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
+        if (!UserOwnership.CanAccessOwner(User, id)) return Forbid();
         var owner = await getOwner.HandleAsync(new GetOwnerQuery(id), cancellationToken);
         return owner is null
             ? NotFound(new ProblemDetails
@@ -57,8 +60,15 @@ public class OwnersController(
     /// <summary>Lists all owners ordered by name.</summary>
     [HttpGet]
     [ProducesResponseType<IReadOnlyList<OwnerDto>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<OwnerDto>>> GetAll(CancellationToken cancellationToken) =>
-        Ok(await getAllOwners.HandleAsync(new GetAllOwnersQuery(), cancellationToken));
+    public async Task<ActionResult<IReadOnlyList<OwnerDto>>> GetAll(CancellationToken cancellationToken)
+    {
+        if (User.IsInRole("admin"))
+            return Ok(await getAllOwners.HandleAsync(new GetAllOwnersQuery(), cancellationToken));
+
+        if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var ownerId)) return Forbid();
+        var owner = await getOwner.HandleAsync(new GetOwnerQuery(ownerId), cancellationToken);
+        return owner is null ? Ok(Array.Empty<OwnerDto>()) : Ok(new[] { owner });
+    }
 
     /// <summary>Updates an owner's contact information.</summary>
     /// <response code="200">The owner was updated.</response>
@@ -71,15 +81,19 @@ public class OwnersController(
     public async Task<ActionResult<OwnerDto>> Update(
         Guid id,
         UpdateOwnerRequest request,
-        CancellationToken cancellationToken) =>
-        Ok(await updateOwner.HandleAsync(
+        CancellationToken cancellationToken)
+    {
+        if (!UserOwnership.CanAccessOwner(User, id)) return Forbid();
+        return Ok(await updateOwner.HandleAsync(
             new UpdateOwnerCommand(id, request.OwnerName, request.Email, request.Phone, request.Address),
             cancellationToken));
+    }
 
     /// <summary>Deletes an owner and their pets.</summary>
     /// <response code="204">The owner was deleted.</response>
     /// <response code="404">The owner does not exist.</response>
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "admin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
@@ -96,6 +110,9 @@ public class OwnersController(
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IReadOnlyList<PetDto>>> GetPets(
         Guid ownerId,
-        CancellationToken cancellationToken) =>
-        Ok(await getOwnerPets.HandleAsync(new GetOwnerPetsQuery(ownerId), cancellationToken));
+        CancellationToken cancellationToken)
+    {
+        if (!UserOwnership.CanAccessOwner(User, ownerId)) return Forbid();
+        return Ok(await getOwnerPets.HandleAsync(new GetOwnerPetsQuery(ownerId), cancellationToken));
+    }
 }

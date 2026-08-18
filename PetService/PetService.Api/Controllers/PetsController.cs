@@ -4,6 +4,7 @@ using PetService.Application.Commands;
 using PetService.Application.Dtos;
 using PetService.Application.Queries;
 using PetService.Application.Requests;
+using PetService.Api.Security;
 
 namespace PetService.Api.Controllers;
 
@@ -17,6 +18,7 @@ public class PetsController(
     DeletePetHandler deletePet,
     GetPetByIdHandler getPetById,
     GetAllPetsHandler getAllPets,
+    GetOwnerPetsHandler getOwnerPets,
     CheckPetOwnershipHandler checkPetOwnership) : ControllerBase
 {
     /// <summary>Registers a pet for an existing owner.</summary>
@@ -34,6 +36,7 @@ public class PetsController(
         CreatePetRequest request,
         CancellationToken cancellationToken)
     {
+        if (!UserOwnership.CanAccessOwner(User, request.OwnerId)) return Forbid();
         var pet = await registerPet.HandleAsync(new RegisterPetCommand(request), cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id = pet.PetId }, pet);
     }
@@ -48,6 +51,7 @@ public class PetsController(
     public async Task<ActionResult<PetDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var pet = await getPetById.HandleAsync(new GetPetByIdQuery(id), cancellationToken);
+        if (pet is not null && !UserOwnership.CanAccessOwner(User, pet.OwnerId)) return Forbid();
         return pet is null
             ? NotFound(new ProblemDetails
             {
@@ -62,8 +66,14 @@ public class PetsController(
     [HttpGet]
     [Authorize(Roles = "owner,admin")]
     [ProducesResponseType<IReadOnlyList<PetDto>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<PetDto>>> GetAll(CancellationToken cancellationToken) =>
-        Ok(await getAllPets.HandleAsync(new GetAllPetsQuery(), cancellationToken));
+    public async Task<ActionResult<IReadOnlyList<PetDto>>> GetAll(CancellationToken cancellationToken)
+    {
+        if (User.IsInRole("admin"))
+            return Ok(await getAllPets.HandleAsync(new GetAllPetsQuery(), cancellationToken));
+
+        if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var ownerId)) return Forbid();
+        return Ok(await getOwnerPets.HandleAsync(new GetOwnerPetsQuery(ownerId), cancellationToken));
+    }
 
     /// <summary>Updates a pet's profile and medical metadata.</summary>
     /// <response code="200">The pet was updated.</response>
@@ -79,8 +89,13 @@ public class PetsController(
     public async Task<ActionResult<PetDto>> Update(
         Guid id,
         UpdatePetRequest request,
-        CancellationToken cancellationToken) =>
-        Ok(await updatePet.HandleAsync(new UpdatePetCommand(id, request), cancellationToken));
+        CancellationToken cancellationToken)
+    {
+        var pet = await getPetById.HandleAsync(new GetPetByIdQuery(id), cancellationToken);
+        if (pet is null) return NotFound();
+        if (!UserOwnership.CanAccessOwner(User, pet.OwnerId)) return Forbid();
+        return Ok(await updatePet.HandleAsync(new UpdatePetCommand(id, request), cancellationToken));
+    }
 
     /// <summary>Deletes a pet.</summary>
     /// <response code="204">The pet was deleted.</response>
@@ -91,6 +106,9 @@ public class PetsController(
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
+        var pet = await getPetById.HandleAsync(new GetPetByIdQuery(id), cancellationToken);
+        if (pet is null) return NotFound();
+        if (!UserOwnership.CanAccessOwner(User, pet.OwnerId)) return Forbid();
         await deletePet.HandleAsync(new DeletePetCommand(id), cancellationToken);
         return NoContent();
     }
@@ -113,6 +131,7 @@ public class PetsController(
         [FromQuery] Guid ownerId,
         CancellationToken cancellationToken)
     {
+        if (!User.IsInRole("service") && !UserOwnership.CanAccessOwner(User, ownerId)) return Forbid();
         var ownership = await checkPetOwnership.HandleAsync(
             new CheckPetOwnershipQuery(id, ownerId),
             cancellationToken);
