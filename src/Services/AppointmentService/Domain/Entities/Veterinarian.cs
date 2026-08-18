@@ -37,7 +37,7 @@ public class Veterinarian
         return veterinarian;
     }
 
-    public void Update(string fullName, string specialization, string licenseNumber)
+    public void Update(string fullName, string specialization, string licenseNumber, Guid? clinicId = null)
     {
         if (string.IsNullOrWhiteSpace(fullName))
         {
@@ -54,9 +54,15 @@ public class Veterinarian
             throw new ArgumentException("License number is required.", nameof(licenseNumber));
         }
 
+        if (clinicId == Guid.Empty)
+        {
+            throw new ArgumentException("Clinic is required.", nameof(clinicId));
+        }
+
         FullName = fullName.Trim();
         Specialization = specialization.Trim();
         LicenseNumber = licenseNumber.Trim();
+        if (clinicId.HasValue) ClinicId = clinicId.Value;
     }
 
     public void MarkUnavailable() => IsAvailable = false;
