@@ -76,7 +76,7 @@ Status:
 - [x] Treatment domain tests, API integration tests, Kafka processing tests, health tests, and Pact tests.
 - [x] Shared MCP server, Streamable HTTP transport, authentication, all nine registered tools, and integration tests.
 - [x] Treatment MCP tools, including read and record operations.
-- [x] YARP API Gateway routes, token forwarding, security behavior, MCP routing, and 30 Gateway tests.
+- [x] YARP API Gateway routes, token forwarding, security behavior, MCP routing, unified Swagger/OpenAPI documentation, and 37 Gateway tests.
 - [x] Real Keycloak → Gateway → Treatment and Keycloak → Gateway → MCP → Treatment flows.
 - [x] Repeatable verification script: `scripts/verify-gateway-treatment-mcp.sh`.
 
@@ -87,7 +87,7 @@ Status:
 - [x] Document the Treatment bounded context, notification worker, Kafka long polling, offset commit, retry, dead-lettering, and idempotency.
 - [x] Document MCP/Gateway responsibilities, Streamable HTTP, bearer-token forwarding, YARP routing, and GitHub Copilot configuration.
 - [x] Prepare the Treatment, Kafka, MCP, and Gateway speaking/demo notes for the final video.
-- [x] Run all Member 3 suites: **147 passed, 0 failed**.
+- [x] Run all Member 3 suites: **154 passed, 0 failed**.
 - [x] Rebuild the Docker containers and pass Keycloak → Gateway → Treatment and Keycloak → Gateway → MCP → Treatment verification.
 - [x] Create and pass a live worker verification that console-delivers a due notification and persists `Sent`.
 - [x] Remove the Treatment container's missing GSSAPI-library and HTTP-only HTTPS-redirection warnings.

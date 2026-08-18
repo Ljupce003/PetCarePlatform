@@ -231,7 +231,7 @@ You are done when:
 - [x] 37 Treatment API/Kafka/PostgreSQL integration tests pass.
 - [x] 11 Treatment Pact tests pass.
 - [x] 10 MCP integration tests pass.
-- [x] 30 API Gateway integration tests pass.
+- [x] 37 API Gateway integration tests pass, including unified OpenAPI/Swagger documentation.
 - [x] `verify-gateway-treatment-mcp.sh` passes against rebuilt Docker containers.
 - [x] `verify-treatment-notification-worker.sh` console-delivers a live notification and observes persisted `Sent` status.
 
