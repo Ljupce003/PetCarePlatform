@@ -1,7 +1,6 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using AppointmentService.Application.Abstractions;
-using AppointmentService.Infrastructure.Clients;
 using AppointmentService.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -22,11 +21,7 @@ namespace AppointmentService.Api.IntegrationTests;
 /// no live Keycloak to reach, so this is the one environment Program.cs's JWT bearer setup and
 /// AuthController.Login validate/issue a locally-signed token for instead of going through
 /// Keycloak -- every other environment (local `dotnet run`, Docker, production) is Keycloak-only.
-/// Pet-ownership verification still uses FakePetVerificationClient, forced via an explicit
-/// service override below rather than the PetService:UseFakeVerification config switch: Program.cs
-/// reads that setting (deciding between FakePetVerificationClient/PetServiceClient) before this
-/// factory's ConfigureWebHost customizations are applied, so a config-only override arrives too
-/// late to change which one gets registered.
+/// Pet ownership and Kafka are replaced only inside this test host.
 /// </summary>
 public sealed class AppointmentServiceApiFactory : WebApplicationFactory<Program>
 {
@@ -40,11 +35,8 @@ public sealed class AppointmentServiceApiFactory : WebApplicationFactory<Program
 
         builder.ConfigureServices(services =>
         {
-            // See the class summary: overriding here (post-registration) instead of via
-            // PetService:UseFakeVerification, since Program.cs's config-driven choice between
-            // this and the real PetServiceClient already ran by the time ConfigureWebHost fires.
             services.RemoveAll<IPetVerificationClient>();
-            services.AddSingleton<IPetVerificationClient, FakePetVerificationClient>();
+            services.AddSingleton<IPetVerificationClient, TestPetVerificationClient>();
 
             // Program.cs's own AddDbContext<AppointmentDbContext>(UseNpgsql) already ran by this
             // point and left Npgsql's provider services in this same IServiceCollection --
@@ -93,4 +85,13 @@ public sealed class AppointmentServiceApiFactory : WebApplicationFactory<Program
     }
 
     private sealed record TokenResponsePayload(string AccessToken, string Role, Guid? UserId);
+
+    private sealed class TestPetVerificationClient : IPetVerificationClient
+    {
+        public Task<PetVerificationResult> VerifyAsync(
+            Guid petId,
+            Guid ownerId,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new PetVerificationResult(petId != Guid.Empty, ownerId != Guid.Empty));
+    }
 }
