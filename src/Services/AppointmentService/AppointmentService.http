@@ -111,11 +111,8 @@ Authorization: Bearer {{ownerToken}}
 
 
 ### Book an appointment — replace availabilitySlotId with one from the search above.
-### NOTE: pet-ownership verification is faked (PetService:UseFakeVerification=true in
-### appsettings.Development.json and in docker-compose.yml) since Pet Service doesn't have its
-### /exists endpoint or any seeded pets/owners yet — any non-empty petId/ownerId is accepted.
-### Any GUIDs work, but the demo ones above (DemoPetId/DemoOwnerId) are convenient since they also
-### show up in "upcoming". Once Pet Service is ready, flip that flag off to hit the real service.
+### Pet ownership is verified by Pet Service. Appointment Service discovers Pet Service through
+### Consul and obtains its service token from Keycloak with the client-credentials grant.
 POST {{AppointmentService_HostAddress}}/appointments
 Authorization: Bearer {{ownerToken}}
 Content-Type: application/json
