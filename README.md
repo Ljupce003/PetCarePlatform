@@ -1,73 +1,194 @@
-# Спецификација – PetCare Platform
+# PetCare Platform
 
-## 1. Опис на темата и проблемот
+PetCare Platform is a three-member course project built as three business microservices:
 
-PetCare Platform е систем за управување со домашни миленици, ветеринарни термини, медицинска историја, вакцинации и известувања. Целта е сопствениците да имаат едно место за профилите на милениците и термините, додека ветеринарите внесуваат прегледи, дијагнози и терапии. Системот е поделен на три независни bounded contexts, еднакви на бројот на членови во тим од три лица.
+| Member | Service | Responsibility |
+|---|---|---|
+| 1 | Pet Service | Owners, pets, ownership verification |
+| 2 | Appointment Service | Clinics, veterinarians, slots, appointments |
+| 3 | Treatment Service | Examinations, vaccinations, Kafka notifications, MCP integration |
 
-## 2. Архитектура
+The API Gateway, Keycloak, Consul, Kafka, MCP server, frontend, tests, and documentation are shared platform responsibilities. They do not count as additional business microservices.
 
-Решението е microservice monorepo изработено со ASP.NET Core Web API и .NET 10. Секој бизнис сервис има Domain, Application, Infrastructure и API слој. Сервисите немаат директни project references еден кон друг и не пристапуваат до туѓа база. Клиентските барања влегуваат преку YARP API Gateway. Keycloak издава OAuth 2.0/OIDC JWT токени, Consul служи како service registry, а Kafka пренесува integration events. MCP серверот ги изложува главните read-only сценарија како AI алатки.
+## Architecture
 
-## 3. Domain-Driven Design
+![PetCare Platform architecture](docs/architecture/petcare-platform-architecture.png)
 
-### Pet bounded context
+Runtime source is grouped under `src/`, while verification code and generated contracts live under `tests/`:
 
-Aggregate roots се `Owner` и `Pet`. `Pet` содржи value object `MicrochipNumber`, вид, раса, датум на раѓање, алергии и хронични состојби. Бизнис правилата спречуваат невалиден датум на раѓање, празно име и невалиден број на микрочип. Само Pet Service е сопственик на овие податоци.
+```text
+src/
+├── Services/
+│   ├── PetService/
+│   ├── AppointmentService/
+│   └── TreatmentService/
+├── Platform/
+│   ├── ApiGateway/
+│   └── MCPServer/
+├── Frontend/
+└── Shared/
+tests/
+├── Contracts/pacts/
+├── EndToEnd/
+└── *.Tests/
+```
 
-### Appointment bounded context
+Every business service uses the same `Api`, `Application`, `Domain`, and `Infrastructure` layout and owns its PostgreSQL database.
 
-Главни ентитети се `Clinic`, `Veterinarian`, `AvailabilitySlot` и `Appointment`. `AvailabilitySlot` го инкапсулира правилото дека резервиран или изминат термин не може повторно да се резервира. `Appointment` ја контролира транзицијата меѓу Scheduled, Cancelled и Completed и дозволува презакажување само на активен термин.
+The main integrations are:
 
-### Treatment & Notification bounded context
+- YARP provides one authenticated entry point.
+- Keycloak issues user JWTs and the Appointment service client-credentials token.
+- Appointment resolves Pet Service through Consul and calls its ownership ACL endpoint.
+- Appointment publishes lifecycle events to Kafka.
+- Treatment consumes the events idempotently and creates owner/veterinarian notifications.
+- Pact verifies the Appointment consumer/Pet provider HTTP contract.
+- MCP exposes service functionality without direct database access.
 
-Главни ентитети се `MedicalExamination`, `Vaccination` и `Notification`. Медицинскиот преглед чува дијагноза, терапија, лекови и следна контрола. Вакцинацијата чува датум на давање и следен рок. Известувањето има status и source event identifier за идемпотентна обработка на Kafka пораки.
+## Components and ports
 
-## 4. Опис на сервисите
+| Component | Host URL/port |
+|---|---|
+| Frontend | `http://localhost:5173` |
+| API Gateway and Swagger | `http://localhost:7000` |
+| MCP through Gateway | `http://localhost:7000/mcp` |
+| MCP direct | `http://localhost:7001/mcp` |
+| Pet Service | `http://localhost:5101` |
+| Appointment Service | `http://localhost:5102` |
+| Treatment Service | `http://localhost:5103` |
+| Keycloak | `http://localhost:8080` |
+| Consul UI | `http://localhost:8500` |
+| Kafka host listener | `localhost:29092` |
+| Pet / Appointment / Treatment PostgreSQL | `5433` / `5434` / `5553` |
 
-### Pet Service
+## Start the platform
 
-Овозможува CRUD операции за сопственици и миленици. Endpoint-от `GET /api/pets/{id}/exists?ownerId=...` е анти-корупциски интерфејс што Appointment Service го користи без да го преземе Pet домен моделот. Податоците се чуваат во посебна PostgreSQL база `petcare_pet`.
+Requirements: Docker Desktop with Compose. .NET 10 and Node.js 22 are only needed for local builds.
 
-### Appointment Service
+```powershell
+docker compose up -d --build
+docker compose ps
+```
 
-Овозможува пребарување слободни ветеринари по датум, локација и специјализација, како и закажување, откажување и презакажување. Пред закажување, `HttpClient` го повикува Pet Service. Logical host-от `pet-service` се разрешува преку Consul, а service-account токен се добива од Keycloak. По успешна промена сервисот објавува Kafka integration event.
+Open the frontend at `http://localhost:5173` or Gateway Swagger at `http://localhost:7000/swagger`.
 
-### Treatment & Notification Service
+Demo users:
 
-Овозможува внесување прегледи и вакцинации и читање медицинска историја. Background Kafka consumer ги обработува AppointmentScheduled, AppointmentCancelled и AppointmentRescheduled настаните. За секој настан создава идемпотентно известување. Друг background worker ги испраќа пристигнатите известувања во demo режим преку console log. Console sender-от е намерно избрана финална demo имплементација; email/SMS providers и `GetPendingNotifications` endpoint не се дел од договорениот опсег на проектот. Деталната архитектура и текот на обработка се документирани во [`TreatmentAndNotificationService/README.md`](TreatmentAndNotificationService/README.md).
+| Username | Password | Role |
+|---|---|---|
+| `owner1` | `Owner123!` | owner |
+| `vet1` | `Vet123!` | veterinarian |
+| `admin1` | `Admin123!` | admin |
 
-## 5. Комуникација меѓу сервисите
+These are development-only credentials. Docker Compose also contains development client secrets; replace them outside a local demo.
 
-Синхроната комуникација е REST преку `HttpClient`. Appointment Service има сопствен `IPetVerificationClient` и `PetServiceClient`, што претставува Anti-Corruption Layer: надворешниот JSON се претвора во локалниот `PetVerificationResult`. Consul ја дава адресата на здрава Pet Service инстанца. Service-to-service повикот носи OAuth client-credentials токен.
+Stop the platform while keeping database volumes:
 
-Асинхроната комуникација користи Kafka topic `petcare.appointments`. Пораките се обвиткани во `IntegrationEventEnvelope` со event type, payload, timestamp и correlation ID. Consumer-от commit-ира offset само по успешна обработка. Уникатниот `SourceEventId` во Notification базата спречува дупли известувања при повторна испорака.
+```powershell
+docker compose down
+```
 
-## 6. API Gateway и service discovery
+Reset all demo database data:
 
-YARP е централизирана влезна точка. Патеките `/pet`, `/appointment`, `/treatment` и `/mcp` се рутираат кон соодветните сервиси, а gateway-от бара автентициран корисник. Во Docker cluster YARP користи внатрешни DNS адреси и го проследува оригиналниот bearer token. Сите компоненти дополнително се регистрираат во Consul. Appointment Service го користи Consul health API за runtime discovery, со што може да избере меѓу повеќе здрави инстанци.
+```powershell
+docker compose down -v
+```
 
-## 7. Безбедност
+## Verify the complete workflow
 
-Keycloak realm-от `petcare` содржи улоги `owner`, `veterinarian`, `admin` и `service`. API сервисите и gateway-от ја валидираат потписаната JWT порака. Controllers користат role authorization: сопственик/администратор менува pet и appointment податоци, а ветеринар/администратор внесува медицински податоци. Appointment Service и MCP серверот користат confidential clients и client-credentials flow.
+With the stack running, execute:
 
-Demo web client-от користи direct access grant за лесна презентација. Во production треба да се замени со Authorization Code + PKCE, да се овозможи HTTPS, да се валидира audience и client secrets да се чуваат во secret manager.
+```powershell
+pwsh -File tests/EndToEnd/verify-docker-workflow.ps1
+```
 
-## 8. Бази и конфигурација
+The script proves this production path:
 
-Секој сервис има посебна PostgreSQL база и сопствен EF Core `DbContext`. Нема cross-database joins или споделени табели. При demo старт се користи `EnsureCreated` и seed data за повторлива презентација. Конфигурацијата е во `appsettings.json`, а Docker Compose ја заменува преку environment variables. Sensitive вредности во примерот се само demo secrets и мора да се сменат за production.
+1. `owner1` logs in through Keycloak.
+2. The seeded pet Luna is read through the Gateway.
+3. An open Appointment slot is selected.
+4. Appointment obtains a Keycloak client-credentials token.
+5. Appointment resolves Pet Service through Consul and verifies ownership.
+6. The appointment is stored and a Kafka event is published.
+7. Treatment consumes the event and creates a notification.
 
-## 9. Consumer-driven contracts
+Expected final output includes an Appointment ID and a Kafka notification ID.
 
-Appointment Service е consumer, а Pet Service е provider. Pact consumer test креира mock Pet Service и проверува дека `PetServiceClient` правилно го чита договорот за pet ownership. Тестот генерира Pact JSON. Provider test го репродуцира истиот договор кон вистински Pet Service на TCP endpoint и проверува дека status, headers и body се компатибилни.
+## Test MCP with an MCP-capable app
 
-## 10. MCP сервер
+The easiest UI test is Visual Studio Code with GitHub Copilot Agent mode. A ready-to-copy configuration is stored in `src/Platform/MCPServer/mcp.json`. Keep it there as the project template and add its contents to the VS Code user MCP configuration so the repository does not need a root `.vscode` folder.
 
-MCP серверот користи официјален C# SDK и stateless Streamable HTTP transport. Изложени се девет tools: `get_pet`, `get_owner_pets`, `find_available_veterinarians`, `get_upcoming_appointments`, `get_medical_history`, `get_vaccination_history`, `get_next_vaccination`, `record_medical_examination` и `record_vaccination`. MCP серверот не пристапува директно до базите; тој ги повикува REST API-јата на сервисите и го проследува валидираниот bearer token. Може да се тестира директно на `http://localhost:7001/mcp` или преку API Gateway на `http://localhost:7000/mcp`. Скриптата `scripts/verify-gateway-treatment-mcp.sh` го проверува реалниот Keycloak -> Gateway -> MCP -> Treatment тек.
+1. Start the Docker stack.
+2. Obtain an owner token and copy it to the clipboard:
 
-## 11. Тестирање и демонстрација
+```powershell
+$token = (Invoke-RestMethod -Method Post `
+  -Uri 'http://localhost:8080/realms/petcare/protocol/openid-connect/token' `
+  -ContentType 'application/x-www-form-urlencoded' `
+  -Body @{grant_type='password'; client_id='petcare-demo'; username='owner1'; password='Owner123!'}
+).access_token
+$token | Set-Clipboard
+```
 
-Health endpoints постојат на сите сервиси. `PetCarePlatform.http` и `scripts/demo.ps1` демонстрираат login, читање pet, пребарување слободен термин, закажување и појава на асинхроно известување. Pact тестовите го покриваат критичниот HTTP договор. За финалното видео се користи планот во `VIDEO_SCRIPT.md`, со максимално времетраење од пет минути.
+3. In VS Code, run **MCP: Open User Configuration** from the Command Palette.
+4. Copy the `inputs` and `servers.petcare` configuration from `src/Platform/MCPServer/mcp.json` into the opened user `mcp.json`. Merge the entries if that file already contains other MCP servers.
+5. Run **MCP: List Servers**, select `petcare`, and start it.
+6. Paste the token when VS Code asks for `petcare-token`.
+7. Open Copilot Chat in Agent mode, enable the PetCare tools, and try:
+   - `Get the pet with id 44444444-4444-4444-4444-444444444444.`
+   - `List open appointment slots.`
+   - `Show upcoming appointments for owner 33333333-3333-3333-3333-333333333333.`
 
-## 12. Улоги во тимот
+The demo token expires after 15 minutes. Generate and paste a new token if the MCP server returns `401`.
 
-Член 1 е одговорен за Pet Service и pet domain. Член 2 е одговорен за Appointment Service, Consul и синхроната интеграција. Член 3 е одговорен за Treatment & Notification Service, Kafka и MCP. Gateway, Keycloak, документацијата и integration testing се заедничка одговорност.
+The server currently exposes 13 tools:
+
+- Pet: `get_pet`, `get_owner_pets`
+- Appointment: `find_available_veterinarians`, `get_upcoming_appointments`, `search_clinics`, `search_available_slots`, `find_open_appointment_slots`, `create_available_slot`
+- Treatment: `get_medical_history`, `get_vaccination_history`, `get_next_vaccination`, `record_medical_examination`, `record_vaccination`
+
+Other MCP-capable applications can use the same Gateway URL, `http://localhost:7000/mcp`, with the `Authorization: Bearer <token>` header.
+
+VS Code MCP setup reference: <https://code.visualstudio.com/docs/agent-customization/mcp-servers>
+
+## Build and test locally
+
+Run every .NET test project:
+
+```powershell
+dotnet restore PetCarePlatform.slnx
+dotnet test PetCarePlatform.slnx --no-restore
+```
+
+Build the frontend:
+
+```powershell
+cd src/Frontend
+npm ci
+npm run build
+```
+
+Important test groups include domain tests, application tests, repository tests, API integration tests, Kafka/PostgreSQL integration tests, Gateway tests, MCP protocol/end-to-end tests, and consumer/provider Pact tests. Generated contracts are stored in `tests/Contracts/pacts/`.
+
+## Configuration
+
+Docker Compose supplies all runtime addresses and development secrets. Standard ASP.NET double-underscore environment variables override `appsettings.json`, for example:
+
+- `ConnectionStrings__Database`
+- `Jwt__Authority`, `Jwt__Issuer`, `Jwt__Audience`
+- `Consul__Address`
+- `Kafka__BootstrapServers`
+- `ServiceAuthentication__ClientId`, `ServiceAuthentication__ClientSecret`
+
+The Appointment-to-Pet call always uses the real integration. There is no production fake switch. Test doubles exist only inside test projects.
+
+## Documentation and health
+
+- Gateway Swagger: `http://localhost:7000/swagger`
+- Pet Swagger: `http://localhost:5101/swagger`
+- Appointment Swagger: `http://localhost:5102/swagger`
+- Treatment Swagger: `http://localhost:5103/swagger`
+- Health endpoints: `/health` on Gateway, MCP, and every service
+- Editable architecture source: `docs/architecture/petcare-platform-architecture.svg`
+
+The notification sender intentionally writes to the service console for the course demo; email/SMS delivery is outside the project scope.
