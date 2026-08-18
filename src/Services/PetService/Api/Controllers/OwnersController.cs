@@ -10,7 +10,7 @@ namespace PetService.Api.Controllers;
 
 [ApiController]
 [Route("owners")]
-[Authorize(Roles = "owner,admin")]
+[Authorize(Roles = "owner,veterinarian,admin")]
 public class OwnersController(
     CreateOwnerHandler createOwner,
     UpdateOwnerHandler updateOwner,
@@ -45,7 +45,7 @@ public class OwnersController(
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OwnerDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
-        if (!UserOwnership.CanAccessOwner(User, id)) return Forbid();
+        if (!User.IsInRole("veterinarian") && !UserOwnership.CanAccessOwner(User, id)) return Forbid();
         var owner = await getOwner.HandleAsync(new GetOwnerQuery(id), cancellationToken);
         return owner is null
             ? NotFound(new ProblemDetails

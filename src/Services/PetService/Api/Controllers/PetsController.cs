@@ -45,13 +45,13 @@ public class PetsController(
     /// <response code="200">The pet was found.</response>
     /// <response code="404">The pet does not exist.</response>
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "owner,admin")]
+    [Authorize(Roles = "owner,veterinarian,admin")]
     [ProducesResponseType<PetDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PetDto>> GetById(Guid id, CancellationToken cancellationToken)
     {
         var pet = await getPetById.HandleAsync(new GetPetByIdQuery(id), cancellationToken);
-        if (pet is not null && !UserOwnership.CanAccessOwner(User, pet.OwnerId)) return Forbid();
+        if (pet is not null && !User.IsInRole("veterinarian") && !UserOwnership.CanAccessOwner(User, pet.OwnerId)) return Forbid();
         return pet is null
             ? NotFound(new ProblemDetails
             {
