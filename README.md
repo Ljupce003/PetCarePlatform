@@ -116,7 +116,7 @@ Expected final output includes an Appointment ID and a Kafka notification ID.
 
 ## Test MCP with an MCP-capable app
 
-The easiest UI test is Visual Studio Code with GitHub Copilot Agent mode. VS Code supports authenticated Streamable HTTP MCP servers and workspace `.vscode/mcp.json` configuration.
+The easiest UI test is Visual Studio Code with GitHub Copilot Agent mode. A ready-to-copy configuration is stored in `src/Platform/MCPServer/mcp.json`. Keep it there as the project template and add its contents to the VS Code user MCP configuration so the repository does not need a root `.vscode` folder.
 
 1. Start the Docker stack.
 2. Obtain an owner token and copy it to the clipboard:
@@ -130,9 +130,11 @@ $token = (Invoke-RestMethod -Method Post `
 $token | Set-Clipboard
 ```
 
-3. Open `.vscode/mcp.json` and select **Start** above the `petcare` server, or run **MCP: List Servers** from the Command Palette.
-4. Paste the token when VS Code asks for `petcare-token`.
-5. Open Copilot Chat in Agent mode, enable the PetCare tools, and try:
+3. In VS Code, run **MCP: Open User Configuration** from the Command Palette.
+4. Copy the `inputs` and `servers.petcare` configuration from `src/Platform/MCPServer/mcp.json` into the opened user `mcp.json`. Merge the entries if that file already contains other MCP servers.
+5. Run **MCP: List Servers**, select `petcare`, and start it.
+6. Paste the token when VS Code asks for `petcare-token`.
+7. Open Copilot Chat in Agent mode, enable the PetCare tools, and try:
    - `Get the pet with id 44444444-4444-4444-4444-444444444444.`
    - `List open appointment slots.`
    - `Show upcoming appointments for owner 33333333-3333-3333-3333-333333333333.`
@@ -145,7 +147,9 @@ The server currently exposes 13 tools:
 - Appointment: `find_available_veterinarians`, `get_upcoming_appointments`, `search_clinics`, `search_available_slots`, `find_open_appointment_slots`, `create_available_slot`
 - Treatment: `get_medical_history`, `get_vaccination_history`, `get_next_vaccination`, `record_medical_examination`, `record_vaccination`
 
-VS Code MCP configuration reference: <https://code.visualstudio.com/docs/agents/reference/mcp-configuration>
+Other MCP-capable applications can use the same Gateway URL, `http://localhost:7000/mcp`, with the `Authorization: Bearer <token>` header.
+
+VS Code MCP setup reference: <https://code.visualstudio.com/docs/agent-customization/mcp-servers>
 
 ## Build and test locally
 
