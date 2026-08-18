@@ -12,6 +12,12 @@ public interface IVeterinarianRepository
     Task<Veterinarian?> GetByIdAsync(Guid veterinarianId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<Veterinarian>> SearchAsync(Guid? clinicId, string? specialization, CancellationToken cancellationToken);
+
+    Task AddAsync(Veterinarian veterinarian, CancellationToken cancellationToken);
+
+    Task<bool> HasAppointmentsAsync(Guid veterinarianId, CancellationToken cancellationToken);
+
+    void Remove(Veterinarian veterinarian);
 }
 
 /// <summary>

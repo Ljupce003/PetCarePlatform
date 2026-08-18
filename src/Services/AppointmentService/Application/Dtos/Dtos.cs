@@ -5,7 +5,7 @@ namespace AppointmentService.Application.Dtos;
 public sealed record ClinicDto(Guid ClinicId, string Name, string Location, string Address);
 
 public sealed record VeterinarianDto(
-    Guid VeterinarianId, Guid ClinicId, string FullName, string Specialization, bool IsAvailable);
+    Guid VeterinarianId, Guid ClinicId, string FullName, string Specialization, string LicenseNumber, bool IsAvailable);
 
 public sealed record AvailableSlotDto(
     Guid AvailabilitySlotId,

@@ -10,7 +10,7 @@ public static class Mappings
 
     public static VeterinarianDto ToDto(this Veterinarian veterinarian) =>
         new(veterinarian.VeterinarianId, veterinarian.ClinicId, veterinarian.FullName,
-            veterinarian.Specialization, veterinarian.IsAvailable);
+            veterinarian.Specialization, veterinarian.LicenseNumber, veterinarian.IsAvailable);
 
     public static AvailableSlotDto ToDto(this AvailableSlotSearchResult result) =>
         new(result.AvailabilitySlotId, result.VeterinarianId, result.VeterinarianName,
