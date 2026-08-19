@@ -51,7 +51,6 @@ Authorization: Bearer {{petcare_token}}
 
 ### Initialize Gateway -> MCP Server
 POST {{gateway}}/mcp
-Authorization: Bearer {{petcare_token}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
 
@@ -59,7 +58,6 @@ Accept: application/json, text/event-stream
 
 ### Call Gateway -> MCP -> Treatment Service
 POST {{gateway}}/mcp
-Authorization: Bearer {{petcare_token}}
 MCP-Protocol-Version: 2025-11-25
 Content-Type: application/json
 Accept: application/json, text/event-stream

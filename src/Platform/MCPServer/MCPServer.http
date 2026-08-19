@@ -1,23 +1,10 @@
 @MCPServer_HostAddress = http://localhost:5044
-@AppointmentService_HostAddress = http://localhost:5102
-
-### Obtain a demo veterinarian JWT from Appointment Service.
-POST {{AppointmentService_HostAddress}}/auth/login
-Content-Type: application/json
-
-{
-  "username": "vet1",
-  "password": "Vet123!"
-}
-
-> {% client.global.set("auth_token", response.body.accessToken); %}
 
 ### Health is intentionally anonymous.
 GET {{MCPServer_HostAddress}}/health
 
-### Initialize an authenticated Streamable HTTP MCP connection.
+### Initialize the trusted anonymous Streamable HTTP MCP connection.
 POST {{MCPServer_HostAddress}}/mcp
-Authorization: Bearer {{auth_token}}
 Content-Type: application/json
 Accept: application/json, text/event-stream
 
@@ -37,7 +24,6 @@ Accept: application/json, text/event-stream
 
 ### List every currently registered MCP tool.
 POST {{MCPServer_HostAddress}}/mcp
-Authorization: Bearer {{auth_token}}
 MCP-Protocol-Version: 2025-11-25
 Content-Type: application/json
 Accept: application/json, text/event-stream

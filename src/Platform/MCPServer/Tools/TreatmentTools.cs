@@ -45,7 +45,7 @@ public sealed class TreatmentTools
     }
 
     [McpServerTool(Name = "record_medical_examination")]
-    [Description("Records a completed medical examination. Requires a veterinarian or administrator token.")]
+    [Description("Records a completed medical examination for the explicitly supplied owner and veterinarian IDs. The trusted MCP service account performs the change.")]
     public Task<MedicalExaminationResponse> RecordMedicalExamination(
         [Description("The examined pet ID.")] Guid petId,
         [Description("The pet owner ID.")] Guid ownerId,
@@ -67,7 +67,7 @@ public sealed class TreatmentTools
     }
 
     [McpServerTool(Name = "record_vaccination")]
-    [Description("Records an administered vaccine. Requires a veterinarian or administrator token.")]
+    [Description("Records an administered vaccine for the explicitly supplied owner and veterinarian IDs. The trusted MCP service account performs the change.")]
     public Task<VaccinationResponse> RecordVaccination(
         [Description("The vaccinated pet ID.")] Guid petId,
         [Description("The pet owner ID.")] Guid ownerId,
