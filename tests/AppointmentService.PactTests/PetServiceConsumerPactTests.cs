@@ -6,11 +6,9 @@ using Xunit;
 namespace AppointmentService.PactTests;
 
 /// <summary>
-/// Consumer-side Pact tests for the contract PetServiceClient depends on (see the "Pet Service
-/// contract this service depends on" section of AppointmentService/README.md):
+/// Consumer-side Pact tests for the contract PetServiceClient depends on:
 /// <c>GET /api/pets/{petId}/exists?ownerId={ownerId}</c>. Running these regenerates the pact file
-/// under /pacts, which Pet Service can (once it implements the endpoint) verify against on its
-/// own side -- that half is Pet Service's own task list item, not this project's.
+/// under tests/Contracts/pacts, where the Pet Service provider tests verify it.
 /// </summary>
 public sealed class PetServiceConsumerPactTests
 {
@@ -23,7 +21,7 @@ public sealed class PetServiceConsumerPactTests
     {
         var pact = Pact.V4("Appointment Service", "Pet Service", new PactConfig
         {
-            PactDir = FindRepositoryRoot().Combine("pacts").FullName
+            PactDir = FindRepositoryRoot().Combine("tests").Combine("Contracts").Combine("pacts").FullName
         });
         _pactBuilder = pact.WithHttpInteractions();
     }

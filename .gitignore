@@ -42,7 +42,13 @@ ScaffoldingReadMe.txt
 # Others
 ~$*
 *~
+.DS_Store
+**/.DS_Store
 CodeCoverage/
+
+# Frontend dependencies and build output
+node_modules/
+dist/
 
 # MSBuild Binary and Structured Log
 *.binlog
