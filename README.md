@@ -12,7 +12,17 @@ The API Gateway, Keycloak, Consul, Kafka, MCP server, frontend, tests, and docum
 
 ## Architecture
 
+
+### Архитектурен дијаграм
+
+![PetCare Platform architecture](docs/architecture/petcare-platform-architecture.svg)
+
+[Отвори и преземи](docs/architecture/index.html) · [Editable SVG](docs/architecture/petcare-platform-architecture.svg) · [PNG export](docs/architecture/petcare-platform-architecture.png)
+
+## 3. Domain-Driven Design
+
 ![PetCare Platform architecture](docs/architecture/petcare-platform-architecture.png)
+
 
 Runtime source is grouped under `src/`, while verification code and generated contracts live under `tests/`:
 
