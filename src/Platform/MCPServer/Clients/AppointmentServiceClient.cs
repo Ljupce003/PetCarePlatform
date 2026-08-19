@@ -82,9 +82,8 @@ public sealed class AppointmentServiceClient(HttpClient httpClient)
     }
 
     /// <summary>
-    /// Calls <c>POST /slots</c> (admin-only downstream). The caller's own bearer token is forwarded
-    /// by <see cref="BearerTokenForwardingHandler"/>, so Appointment Service enforces the admin role
-    /// itself -- this client never impersonates anyone.
+    /// Calls <c>POST /slots</c> (admin-only downstream). The MCP service account token is attached
+    /// by <see cref="ServiceAccessTokenHandler"/> and the target veterinarian is explicit in the request.
     /// </summary>
     public async Task<AvailableSlotResponse> CreateAvailableSlotAsync(
         CreateAvailableSlotRequest request,

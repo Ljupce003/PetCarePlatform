@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1050" viewBox="0 0 1600 1050" role="img" aria-labelledby="diagram-title diagram-desc">
   <title id="diagram-title">PetCare Platform architecture</title>
-  <desc id="diagram-desc">Architecture diagram showing the frontend demo caller and GitHub Copilot MCP client authenticating with Keycloak, entering through the YARP API Gateway, and reaching the Pet, Appointment, Treatment and Notification, and MCP services. Each business service owns a PostgreSQL database. Appointment verifies pet ownership through a synchronous anti-corruption layer call, registers and discovers services with Consul, and publishes appointment events through Kafka for Treatment and Notification to consume.</desc>
+  <desc id="diagram-desc">Architecture diagram showing the authenticated frontend demo caller and the trusted anonymous GitHub Copilot MCP client entering through the YARP API Gateway. The MCP server uses a privileged Keycloak service account when calling the protected Pet, Appointment, and Treatment and Notification services. Each business service owns a PostgreSQL database. Appointment verifies pet ownership through a synchronous anti-corruption layer call, registers and discovers services with Consul, and publishes appointment events through Kafka for Treatment and Notification to consume.</desc>
 
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
@@ -45,11 +45,11 @@
 
   <rect width="1600" height="1050" fill="#ffffff"/>
   <text x="48" y="48" class="title">PetCare Platform — Architecture</text>
-  <text x="48" y="74" class="subtitle">Authenticated microservices, service discovery, synchronous ACL integration, MCP tooling, and event-driven notifications</text>
+  <text x="48" y="74" class="subtitle">Protected REST APIs, trusted administrative MCP tooling, service discovery, synchronous ACL integration, and event-driven notifications</text>
 
-  <!-- Clients and protected entry points -->
+  <!-- Clients, identity and entry points -->
   <rect x="40" y="96" width="1520" height="286" rx="18" class="layer"/>
-  <text x="64" y="124" class="layer-title">CLIENTS, IDENTITY AND PROTECTED ENTRY POINTS</text>
+  <text x="64" y="124" class="layer-title">CLIENTS, IDENTITY AND ENTRY POINTS</text>
 
   <rect x="78" y="144" width="268" height="78" rx="12" class="client"/>
   <text x="212" y="176" class="node-title" text-anchor="middle">Frontend / demo caller</text>
@@ -57,7 +57,7 @@
 
   <rect x="78" y="260" width="268" height="78" rx="12" class="client"/>
   <text x="212" y="292" class="node-title" text-anchor="middle">GitHub Copilot</text>
-  <text x="212" y="316" class="node-copy" text-anchor="middle">MCP client</text>
+  <text x="212" y="316" class="node-copy" text-anchor="middle">Trusted anonymous MCP client</text>
 
   <rect x="430" y="144" width="282" height="180" rx="12" class="identity"/>
   <text x="571" y="179" class="node-title" text-anchor="middle">Keycloak</text>
@@ -68,15 +68,15 @@
 
   <rect x="800" y="144" width="310" height="180" rx="12" class="entry"/>
   <text x="955" y="181" class="node-title" text-anchor="middle">YARP API Gateway</text>
-  <text x="955" y="207" class="node-copy" text-anchor="middle">Single authenticated entry point</text>
+  <text x="955" y="207" class="node-copy" text-anchor="middle">Protected REST + trusted MCP entry</text>
   <text x="955" y="234" class="node-copy" text-anchor="middle">/pet · /appointment · /treatment · /mcp</text>
-  <text x="955" y="261" class="node-copy" text-anchor="middle">Validates JWT and forwards Bearer token</text>
+  <text x="955" y="261" class="node-copy" text-anchor="middle">JWT on REST routes · /mcp anonymous</text>
   <text x="955" y="288" class="node-copy" text-anchor="middle">Routes requests to internal services</text>
 
   <rect x="1218" y="164" width="282" height="140" rx="12" class="entry"/>
   <text x="1359" y="201" class="node-title" text-anchor="middle">MCP Server</text>
   <text x="1359" y="228" class="node-copy" text-anchor="middle">Streamable HTTP · AI tools</text>
-  <text x="1359" y="254" class="node-copy" text-anchor="middle">Validates and forwards Bearer token</text>
+  <text x="1359" y="254" class="node-copy" text-anchor="middle">Privileged service token downstream</text>
   <text x="1359" y="280" class="node-copy" text-anchor="middle">No direct database access</text>
 
   <!-- Authentication and client request flows -->
@@ -85,18 +85,13 @@
   <path d="M430 202 H346" class="flow"/>
   <text x="388" y="220" class="small-label" text-anchor="middle">JWT</text>
 
-  <path d="M346 278 H430" class="flow"/>
-  <text x="388" y="266" class="small-label" text-anchor="middle">OAuth / OIDC</text>
-  <path d="M430 311 H346" class="flow"/>
-  <text x="388" y="329" class="small-label" text-anchor="middle">JWT</text>
-
   <path d="M712 170 H800" class="validation"/>
   <text x="756" y="157" class="small-label" text-anchor="middle">OIDC / JWKS</text>
 
   <path d="M346 218 V346 H856 V324" class="purple-flow"/>
   <text x="525" y="339" class="edge-label">REST + Bearer JWT</text>
   <path d="M346 334 V367 H1030 V324" class="purple-flow"/>
-  <text x="530" y="361" class="edge-label">MCP over HTTP + Bearer JWT</text>
+  <text x="530" y="361" class="edge-label">MCP over HTTP · anonymous caller</text>
 
   <path d="M1110 216 H1218" class="purple-flow"/>
   <text x="1164" y="203" class="small-label" text-anchor="middle">/mcp route</text>
@@ -112,7 +107,7 @@
   <path d="M930 324 V421 H620 V458" class="purple-flow"/>
   <text x="767" y="414" class="edge-label" text-anchor="middle">YARP routes + forwarded Bearer JWT</text>
   <path d="M1359 304 V421 H1120 V458" class="purple-flow"/>
-  <text x="1276" y="414" class="edge-label" text-anchor="middle">REST tools + forwarded Bearer JWT</text>
+  <text x="1276" y="414" class="edge-label" text-anchor="middle">REST tools + MCP admin token</text>
   <path d="M571 324 V394 H470 V458" class="validation"/>
   <text x="516" y="388" class="small-label" text-anchor="middle">OIDC metadata / JWKS</text>
 

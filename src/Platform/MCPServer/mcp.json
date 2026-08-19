@@ -1,19 +1,8 @@
 {
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "petcare-token",
-      "description": "Current Keycloak access token for PetCare",
-      "password": true
-    }
-  ],
   "servers": {
     "petcare": {
       "type": "http",
-      "url": "http://localhost:7000/mcp",
-      "headers": {
-        "Authorization": "Bearer ${input:petcare-token}"
-      }
+      "url": "http://localhost:7000/mcp"
     }
   }
 }

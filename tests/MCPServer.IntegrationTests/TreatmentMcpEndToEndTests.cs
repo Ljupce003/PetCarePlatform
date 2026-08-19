@@ -73,6 +73,9 @@ public sealed class McpWithRealTreatmentFactory(HttpMessageHandler treatmentHand
         builder.UseEnvironment("Testing");
         builder.ConfigureServices(services =>
         {
+            services.RemoveAll<IServiceAccessTokenProvider>();
+            services.AddSingleton<IServiceAccessTokenProvider>(
+                new FixedServiceAccessTokenProvider(CreateAdminServiceToken()));
             services
                 .AddHttpClient<TreatmentServiceClient>(client =>
                 {
@@ -81,6 +84,25 @@ public sealed class McpWithRealTreatmentFactory(HttpMessageHandler treatmentHand
                 })
                 .ConfigurePrimaryHttpMessageHandler(() => treatmentHandler);
         });
+    }
+
+    private static string CreateAdminServiceToken()
+    {
+        var credentials = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                "dev-only-signing-key-change-me-32-chars-minimum!!")),
+            SecurityAlgorithms.HmacSha256);
+        var token = new JwtSecurityToken(
+            issuer: "appointment-service",
+            audience: "petcare",
+            claims:
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, "mcp-server"),
+                new Claim(ClaimTypes.Role, "admin")
+            ],
+            expires: DateTime.UtcNow.AddMinutes(10),
+            signingCredentials: credentials);
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
 
@@ -95,9 +117,8 @@ public sealed class TreatmentMcpEndToEndTests(TreatmentMcpEndToEndFixture fixtur
     public async Task RecordThenReadMedicalExamination_TraversesMcpTreatmentApiAndPostgreSql()
     {
         using var client = fixture.McpFactory.CreateClient();
-        var token = CreateVeterinarianToken();
 
-        using var recordPayload = await CallToolAsync(client, token, "record_medical_examination", new
+        using var recordPayload = await CallToolAsync(client, "record_medical_examination", new
         {
             petId = PetId,
             ownerId = OwnerId,
@@ -118,7 +139,6 @@ public sealed class TreatmentMcpEndToEndTests(TreatmentMcpEndToEndFixture fixtur
 
         using var historyPayload = await CallToolAsync(
             client,
-            token,
             "get_medical_history",
             new { petId = PetId });
         var historyText = GetToolText(historyPayload);
@@ -131,7 +151,6 @@ public sealed class TreatmentMcpEndToEndTests(TreatmentMcpEndToEndFixture fixtur
 
     private static async Task<JsonDocument> CallToolAsync(
         HttpClient client,
-        string token,
         string toolName,
         object arguments)
     {
@@ -146,7 +165,6 @@ public sealed class TreatmentMcpEndToEndTests(TreatmentMcpEndToEndFixture fixtur
         {
             Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
         request.Headers.TryAddWithoutValidation("MCP-Protocol-Version", "2025-11-25");
@@ -169,22 +187,4 @@ public sealed class TreatmentMcpEndToEndTests(TreatmentMcpEndToEndFixture fixtur
         Assert.False(result.TryGetProperty("isError", out var isError) && isError.GetBoolean());
     }
 
-    private static string CreateVeterinarianToken()
-    {
-        var credentials = new SigningCredentials(
-            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
-                "dev-only-signing-key-change-me-32-chars-minimum!!")),
-            SecurityAlgorithms.HmacSha256);
-        var token = new JwtSecurityToken(
-            issuer: "appointment-service",
-            audience: "petcare",
-            claims:
-            [
-                new Claim(JwtRegisteredClaimNames.Sub, VeterinarianId.ToString()),
-                new Claim(ClaimTypes.Role, "veterinarian")
-            ],
-            expires: DateTime.UtcNow.AddMinutes(10),
-            signingCredentials: credentials);
-        return new JwtSecurityTokenHandler().WriteToken(token);
-    }
 }

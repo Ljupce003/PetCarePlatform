@@ -5,11 +5,14 @@ using MCPServer.Contracts;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace MCPServer.IntegrationTests;
 
 public sealed class McpServerFactory : WebApplicationFactory<Program>
 {
+    public const string ServiceAccessToken = "mcp-service-access-token";
+
     public CapturingTreatmentHandler TreatmentHandler { get; } = new();
     public CapturingPetHandler PetHandler { get; } = new();
     public CapturingAppointmentHandler AppointmentHandler { get; } = new();
@@ -19,6 +22,9 @@ public sealed class McpServerFactory : WebApplicationFactory<Program>
         builder.UseEnvironment("Testing");
         builder.ConfigureServices(services =>
         {
+            services.RemoveAll<IServiceAccessTokenProvider>();
+            services.AddSingleton<IServiceAccessTokenProvider>(
+                new FixedServiceAccessTokenProvider(ServiceAccessToken));
             services.AddSingleton(TreatmentHandler);
             services.AddSingleton(PetHandler);
             services.AddSingleton(AppointmentHandler);
@@ -53,12 +59,14 @@ public sealed class CapturingPetHandler : HttpMessageHandler
     private static readonly Guid OwnerId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     public string? LastPath { get; private set; }
+    public string? LastAuthorization { get; private set; }
 
     protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
         LastPath = request.RequestUri?.PathAndQuery;
+        LastAuthorization = request.Headers.Authorization?.ToString();
         var pet = new PetResponse(
             PetId, "Milo", "Dog", "Labrador", new DateOnly(2022, 5, 1), 24.5m,
             "CHIP-123", ["Pollen"], [], OwnerId);
@@ -73,6 +81,12 @@ public sealed class CapturingPetHandler : HttpMessageHandler
 
     private static Task<HttpResponseMessage> Json<T>(HttpStatusCode status, T value) =>
         Task.FromResult(new HttpResponseMessage(status) { Content = JsonContent.Create(value) });
+}
+
+public sealed class FixedServiceAccessTokenProvider(string token) : IServiceAccessTokenProvider
+{
+    public Task<string> GetAccessTokenAsync(CancellationToken cancellationToken) =>
+        Task.FromResult(token);
 }
 
 public sealed class CapturingAppointmentHandler : HttpMessageHandler

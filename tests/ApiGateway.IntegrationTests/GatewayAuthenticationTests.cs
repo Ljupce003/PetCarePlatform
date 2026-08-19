@@ -34,7 +34,6 @@ public sealed class GatewayAuthenticationTests(GatewayTestFixture fixture)
     [InlineData("/pet/pets/1")]
     [InlineData("/appointment/appointments/upcoming")]
     [InlineData("/treatment/api/treatments/pet/11111111-1111-1111-1111-111111111111")]
-    [InlineData("/mcp")]
     public async Task ProxyRoutes_WithoutToken_ReturnUnauthorized(string path)
     {
         using var client = fixture.Gateway.CreateClient();

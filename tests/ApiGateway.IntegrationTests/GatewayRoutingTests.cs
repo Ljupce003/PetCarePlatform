@@ -85,7 +85,7 @@ public sealed class GatewayRoutingTests(GatewayTestFixture fixture)
     [Fact]
     public async Task McpRoute_PreservesPathProtocolHeaderAndStreamableHttpResponse()
     {
-        using var client = fixture.CreateAuthenticatedClient(role: "veterinarian");
+        using var client = fixture.Gateway.CreateClient();
         using var request = new HttpRequestMessage(HttpMethod.Post, "/mcp")
         {
             Content = new StringContent(
@@ -109,7 +109,7 @@ public sealed class GatewayRoutingTests(GatewayTestFixture fixture)
         var captured = fixture.Mcp.Requests.Last();
         Assert.Equal("/mcp", captured.Path);
         Assert.Equal("2025-11-25", captured.Header("MCP-Protocol-Version"));
-        Assert.StartsWith("Bearer ", captured.Header("Authorization"));
+        Assert.Null(captured.Header("Authorization"));
     }
 
     [Fact]
