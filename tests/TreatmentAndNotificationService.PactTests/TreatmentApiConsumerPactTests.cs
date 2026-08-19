@@ -8,7 +8,7 @@ namespace TreatmentAndNotificationService.PactTests;
 
 /// <summary>
 /// Consumer-side API contracts for Treatment &amp; Notification Service. Running this suite writes
-/// <c>pacts/treatment_api_consumer-treatment_and_notification_service.json</c>; a provider
+/// <c>tests/Contracts/pacts/Treatment API Consumer-Treatment &amp; Notification Service.json</c>; a provider
 /// verification suite can use that artifact once a database-backed Treatment API test host is added.
 /// </summary>
 public sealed class TreatmentApiConsumerPactTests
@@ -22,7 +22,7 @@ public sealed class TreatmentApiConsumerPactTests
     {
         var pact = Pact.V4("Treatment API Consumer", "Treatment & Notification Service", new PactConfig
         {
-            PactDir = FindRepositoryRoot().Combine("pacts").FullName
+            PactDir = FindRepositoryRoot().Combine("tests").Combine("Contracts").Combine("pacts").FullName
         });
         _pactBuilder = pact.WithHttpInteractions();
     }

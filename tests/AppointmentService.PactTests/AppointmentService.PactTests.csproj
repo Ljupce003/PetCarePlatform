@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\AppointmentService\AppointmentService.Infrastructure\AppointmentService.Infrastructure.csproj"/>
+        <ProjectReference Include="..\..\src\Services\AppointmentService\AppointmentService.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
