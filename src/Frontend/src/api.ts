@@ -1,0 +1,67 @@
+import type { Appointment, Clinic, Examination, Notification, Owner, Pet, Slot, Vaccination, Veterinarian } from './types';
+
+const baseUrl = import.meta.env.VITE_API_BASE ?? '/gateway';
+export class ApiError extends Error { constructor(public status: number, message: string) { super(message); } }
+
+export function createApi(token: string) {
+  async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+    const response = await fetch(`${baseUrl}${path}`, {
+      ...init,
+      headers: { Authorization: `Bearer ${token}`, ...(init.body ? { 'Content-Type': 'application/json' } : {}), ...init.headers }
+    });
+    if (response.status === 204) return undefined as T;
+    if (!response.ok) {
+      let message = `Request failed (${response.status}).`;
+      try { const body = await response.json() as { detail?: string; title?: string; errors?: Record<string, string[]> }; message = Object.values(body.errors ?? {}).flat().join(' ') || body.detail || body.title || message; } catch { /* keep fallback */ }
+      throw new ApiError(response.status, message);
+    }
+    return response.json() as Promise<T>;
+  }
+  const query = (values: Record<string, string | undefined>) => { const p = new URLSearchParams(Object.entries(values).filter((entry): entry is [string, string] => Boolean(entry[1]))); return p.size ? `?${p}` : ''; };
+  return {
+    owners: () => request<Owner[]>('/pet/owners'),
+    owner: (id: string) => request<Owner>(`/pet/owners/${id}`),
+    ownerPets: (id: string) => request<Pet[]>(`/pet/owners/${id}/pets`),
+    createOwner: (body: unknown) => request<Owner>('/pet/owners', { method: 'POST', body: JSON.stringify(body) }),
+    updateOwner: (id: string, body: unknown) => request<Owner>(`/pet/owners/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    deleteOwner: (id: string) => request<void>(`/pet/owners/${id}`, { method: 'DELETE' }),
+    pets: () => request<Pet[]>('/pet/pets'),
+    pet: (id: string) => request<Pet>(`/pet/pets/${id}`),
+    checkOwnership: (id: string, ownerId: string) => request<{ exists: boolean; ownedByOwner: boolean }>(`/pet/pets/${id}/exists?ownerId=${ownerId}`),
+    createPet: (body: unknown) => request<Pet>('/pet/pets', { method: 'POST', body: JSON.stringify(body) }),
+    updatePet: (id: string, body: unknown) => request<Pet>(`/pet/pets/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    deletePet: (id: string) => request<void>(`/pet/pets/${id}`, { method: 'DELETE' }),
+    clinics: (location?: string) => request<Clinic[]>(`/appointment/clinics${query({ location })}`),
+    vets: (clinicId?: string, specialization?: string) => request<Veterinarian[]>(`/appointment/veterinarians${query({ clinicId, specialization })}`),
+    veterinarian: (id: string) => request<Veterinarian>(`/appointment/veterinarians/${id}`),
+    createVeterinarian: (body: unknown) => request<Veterinarian>('/appointment/veterinarians', { method: 'POST', body: JSON.stringify(body) }),
+    updateVeterinarian: (id: string, body: unknown) => request<Veterinarian>(`/appointment/veterinarians/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    deleteVeterinarian: (id: string) => request<void>(`/appointment/veterinarians/${id}`, { method: 'DELETE' }),
+    availableVets: (date: string, location?: string, specialization?: string) => request<(Veterinarian & { openSlots: Slot[] })[]>(`/appointment/veterinarians/available${query({ date, location, specialization })}`),
+    slots: (veterinarianId?: string, date?: string) => request<Slot[]>(`/appointment/slots${query({ veterinarianId, date })}`),
+    createSlot: (body: unknown) => request<Slot>('/appointment/slots', { method: 'POST', body: JSON.stringify(body) }),
+    updateSlot: (id: string, body: unknown) => request<Slot>(`/appointment/slots/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    deleteSlot: (id: string) => request<void>(`/appointment/slots/${id}`, { method: 'DELETE' }),
+    appointments: (ownerId: string) => request<Appointment[]>(`/appointment/appointments/upcoming?ownerId=${ownerId}`),
+    veterinarianAppointments: (veterinarianId: string) => request<Appointment[]>(`/appointment/appointments/upcoming/veterinarian/${veterinarianId}`),
+    veterinarianClinicalAppointments: (veterinarianId: string) => request<Appointment[]>(`/appointment/appointments/clinical/veterinarian/${veterinarianId}`),
+    bookAppointment: (body: unknown) => request<Appointment>('/appointment/appointments', { method: 'POST', body: JSON.stringify(body) }),
+    cancelAppointment: (id: string, reason?: string) => request<Appointment>(`/appointment/appointments/${id}${query({ reason })}`, { method: 'DELETE' }),
+    rescheduleAppointment: (id: string, newAvailabilitySlotId: string) => request<Appointment>(`/appointment/appointments/${id}/reschedule`, { method: 'PUT', body: JSON.stringify({ newAvailabilitySlotId }) }),
+    examinations: (petId: string, ownerId?: string) => request<Examination[]>(`/treatment/api/treatments/pet/${petId}${query({ ownerId })}`),
+    veterinarianExaminations: (veterinarianId: string) => request<Examination[]>(`/treatment/api/treatments/veterinarian/${veterinarianId}`),
+    createExamination: (body: unknown) => request<Examination>('/treatment/api/treatments', { method: 'POST', body: JSON.stringify(body) }),
+    updateExamination: (id: string, body: unknown) => request<Examination>(`/treatment/api/treatments/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    deleteExamination: (id: string) => request<void>(`/treatment/api/treatments/${id}`, { method: 'DELETE' }),
+    vaccinations: (petId: string, ownerId?: string) => request<Vaccination[]>(`/treatment/api/vaccinations/pet/${petId}${query({ ownerId })}`),
+    veterinarianVaccinations: (veterinarianId: string) => request<Vaccination[]>(`/treatment/api/vaccinations/veterinarian/${veterinarianId}`),
+    nextVaccination: (petId: string, ownerId?: string) => request<Vaccination>(`/treatment/api/vaccinations/pet/${petId}/next${query({ ownerId })}`),
+    createVaccination: (body: unknown) => request<Vaccination>('/treatment/api/vaccinations', { method: 'POST', body: JSON.stringify(body) }),
+    updateVaccination: (id: string, body: unknown) => request<Vaccination>(`/treatment/api/vaccinations/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+    deleteVaccination: (id: string) => request<void>(`/treatment/api/vaccinations/${id}`, { method: 'DELETE' }),
+    notifications: (ownerId: string) => request<Notification[]>(`/treatment/api/notifications/owner/${ownerId}`),
+    veterinarianNotifications: (veterinarianId: string) => request<Notification[]>(`/treatment/api/notifications/veterinarian/${veterinarianId}`),
+    createNotification: (body: unknown) => request<Notification>('/treatment/api/notifications', { method: 'POST', body: JSON.stringify(body) })
+  };
+}
+export type PetCareApi = ReturnType<typeof createApi>;

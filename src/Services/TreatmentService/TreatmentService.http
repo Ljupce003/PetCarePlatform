@@ -1,0 +1,88 @@
+@Keycloak = http://localhost:8080
+@Gateway = http://localhost:7000
+@Treatment = {{Gateway}}/treatment
+@petId = bd591fac-4b2c-47bb-8d57-a2f317a42fc2
+@ownerId = d8ee7d11-6e26-40e0-a62c-a0a950402ba6
+@veterinarianId = f793a3bd-c804-4a6b-8940-f6a80a9e4a87
+
+### Public health endpoint through the Gateway.
+GET {{Gateway}}/health
+
+### Obtain a real Keycloak veterinarian token.
+POST {{Keycloak}}/realms/petcare/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=petcare-demo&username=vet1&password=Vet123!
+
+> {%
+    client.global.set("vetToken", response.body.access_token);
+%}
+
+### Obtain a real Keycloak owner token.
+POST {{Keycloak}}/realms/petcare/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=petcare-demo&username=owner1&password=Owner123!
+
+> {%
+    client.global.set("ownerToken", response.body.access_token);
+%}
+
+### Anonymous protected access returns 401.
+GET {{Treatment}}/api/treatments/pet/{{petId}}
+
+### Any authenticated user can read medical history.
+GET {{Treatment}}/api/treatments/pet/{{petId}}
+Authorization: Bearer {{ownerToken}}
+
+### Veterinarian records an examination and optional follow-up reminder.
+POST {{Treatment}}/api/treatments
+Authorization: Bearer {{vetToken}}
+Content-Type: application/json
+
+{
+  "petId": "{{petId}}",
+  "ownerId": "{{ownerId}}",
+  "veterinarianId": "{{veterinarianId}}",
+  "appointmentId": null,
+  "examinedAtUtc": "2026-08-14T10:00:00Z",
+  "diagnosis": "Routine examination",
+  "treatmentPlan": "Continue regular preventive care",
+  "medications": [],
+  "nextControlAtUtc": "2026-09-14T10:00:00Z",
+  "notes": "No complications"
+}
+
+### Owner cannot create medical records; returns 403 before validation.
+POST {{Treatment}}/api/treatments
+Authorization: Bearer {{ownerToken}}
+Content-Type: application/json
+
+{}
+
+### Veterinarian records a vaccination and next-due reminder.
+POST {{Treatment}}/api/vaccinations
+Authorization: Bearer {{vetToken}}
+Content-Type: application/json
+
+{
+  "petId": "{{petId}}",
+  "ownerId": "{{ownerId}}",
+  "veterinarianId": "{{veterinarianId}}",
+  "vaccineName": "Rabies",
+  "administeredOn": "2026-08-14",
+  "nextDueOn": "2027-08-14",
+  "batchNumber": "RAB-DEMO-001"
+}
+
+### Read vaccination history.
+GET {{Treatment}}/api/vaccinations/pet/{{petId}}
+Authorization: Bearer {{ownerToken}}
+
+### Read next due vaccination.
+GET {{Treatment}}/api/vaccinations/pet/{{petId}}/next
+Authorization: Bearer {{ownerToken}}
+
+### Read the owner's notification history.
+GET {{Treatment}}/api/notifications/owner/{{ownerId}}
+Authorization: Bearer {{ownerToken}}
