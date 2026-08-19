@@ -8,6 +8,12 @@ PetCare Platform е систем за управување со домашни �
 
 Решението е microservice monorepo изработено со ASP.NET Core Web API и .NET 10. Секој бизнис сервис има Domain, Application, Infrastructure и API слој. Сервисите немаат директни project references еден кон друг и не пристапуваат до туѓа база. Клиентските барања влегуваат преку YARP API Gateway. Keycloak издава OAuth 2.0/OIDC JWT токени, Consul служи како service registry, а Kafka пренесува integration events. MCP серверот ги изложува главните read-only сценарија како AI алатки.
 
+### Архитектурен дијаграм
+
+![PetCare Platform architecture](docs/architecture/petcare-platform-architecture.svg)
+
+[Отвори и преземи](docs/architecture/index.html) · [Editable SVG](docs/architecture/petcare-platform-architecture.svg) · [PNG export](docs/architecture/petcare-platform-architecture.png)
+
 ## 3. Domain-Driven Design
 
 ### Pet bounded context
