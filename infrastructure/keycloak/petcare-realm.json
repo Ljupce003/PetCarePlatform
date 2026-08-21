@@ -229,7 +229,7 @@
       "username": "service-account-mcp-server",
       "enabled": true,
       "serviceAccountClientId": "mcp-server",
-      "realmRoles": ["service"]
+      "realmRoles": ["service", "admin"]
     }
   ]
 }

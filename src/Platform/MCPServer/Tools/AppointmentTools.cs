@@ -49,7 +49,7 @@ public sealed class AppointmentTools(AppointmentServiceClient appointmentClient)
         appointmentClient.FindOpenAppointmentSlotsAsync(ParseRequiredDate(date), location, specialization, cancellationToken);
 
     [McpServerTool(Name = "create_available_slot")]
-    [Description("Opens a new appointment slot for an existing veterinarian. Administrative action -- requires an administrator token, forwarded as-is to the Appointment Service.")]
+    [Description("Opens a new appointment slot for the veterinarian identified by veterinarianId. The trusted MCP service account performs this administrative action.")]
     public Task<AvailableSlotResponse> CreateAvailableSlot(
         [Description("The veterinarian this slot belongs to.")] Guid veterinarianId,
         [Description("Slot start, ISO 8601 with offset, for example 2026-08-18T09:00:00Z.")] DateTimeOffset startsAtUtc,

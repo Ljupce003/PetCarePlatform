@@ -1,59 +1,17 @@
-using System.Security.Claims;
-using System.Text;
 using MCPServer.Clients;
-using MCPServer.Security;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 using ModelContextProtocol.Protocol;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var jwtSection = builder.Configuration.GetRequiredSection("Jwt");
-var jwtIssuer = jwtSection["Issuer"]
-    ?? throw new InvalidOperationException("Jwt:Issuer is required.");
-var jwtAudience = jwtSection["Audience"]
-    ?? throw new InvalidOperationException("Jwt:Audience is required.");
-var jwtSigningKey = jwtSection["SigningKey"];
-var useLegacyDevelopmentTokens = !builder.Environment.IsEnvironment("Docker") &&
-                                 !string.IsNullOrWhiteSpace(jwtSigningKey);
-
-builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.MapInboundClaims = false;
-
-        if (!useLegacyDevelopmentTokens)
-        {
-            options.Authority = (jwtSection["Authority"]
-                ?? throw new InvalidOperationException("Jwt:Authority is required in Docker."))
-                .TrimEnd('/');
-            options.Audience = jwtAudience;
-            options.RequireHttpsMetadata = jwtSection.GetValue("RequireHttpsMetadata", true);
-        }
-
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidIssuer = jwtIssuer,
-            ValidateAudience = true,
-            ValidAudience = jwtAudience,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = useLegacyDevelopmentTokens
-                ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey!))
-                : null,
-            ValidateLifetime = true,
-            NameClaimType = "preferred_username",
-            RoleClaimType = ClaimTypes.Role,
-            ClockSkew = TimeSpan.FromSeconds(30)
-        };
-    });
-builder.Services.AddTransient<IClaimsTransformation, KeycloakRoleClaimsTransformation>();
-builder.Services.AddAuthorization();
-
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddTransient<BearerTokenForwardingHandler>();
+builder.Services.AddHttpClient("keycloak-service-token", (services, client) =>
+{
+    var authority = services.GetRequiredService<IConfiguration>()["ServiceAuthentication:Authority"]
+        ?? throw new InvalidOperationException("ServiceAuthentication:Authority is required.");
+    client.BaseAddress = new Uri(authority.TrimEnd('/') + "/");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+builder.Services.AddSingleton<IServiceAccessTokenProvider, KeycloakServiceAccessTokenProvider>();
+builder.Services.AddTransient<ServiceAccessTokenHandler>();
 
 builder.Services
     .AddHttpClient<TreatmentServiceClient>((services, client) =>
@@ -69,7 +27,7 @@ builder.Services
         client.BaseAddress = new Uri(baseUrl);
         client.Timeout = TimeSpan.FromSeconds(30);
     })
-    .AddHttpMessageHandler<BearerTokenForwardingHandler>();
+    .AddHttpMessageHandler<ServiceAccessTokenHandler>();
 
 builder.Services
     .AddHttpClient<PetServiceClient>((services, client) =>
@@ -79,7 +37,7 @@ builder.Services
         client.BaseAddress = new Uri(baseUrl);
         client.Timeout = TimeSpan.FromSeconds(30);
     })
-    .AddHttpMessageHandler<BearerTokenForwardingHandler>();
+    .AddHttpMessageHandler<ServiceAccessTokenHandler>();
 
 builder.Services
     .AddHttpClient<AppointmentServiceClient>((services, client) =>
@@ -89,7 +47,7 @@ builder.Services
         client.BaseAddress = new Uri(baseUrl);
         client.Timeout = TimeSpan.FromSeconds(30);
     })
-    .AddHttpMessageHandler<BearerTokenForwardingHandler>();
+    .AddHttpMessageHandler<ServiceAccessTokenHandler>();
 
 builder.Services
     .AddMcpServer(options =>
@@ -99,7 +57,7 @@ builder.Services
             Name = "PetCare MCP Server",
             Title = "PetCare Platform MCP Server",
             Version = "1.0.0",
-            Description = "Secure MCP tools for the PetCare microservices."
+            Description = "Trusted administrative MCP tools for the PetCare microservices."
         };
     })
     .WithHttpTransport(options => options.Stateless = true)
@@ -112,10 +70,9 @@ var app = builder.Build();
 
 app.MapHealthChecks("/health");
 
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapMcp("/mcp").RequireAuthorization();
+// This is deliberately a trusted, anonymous MCP endpoint. Each downstream call is made with
+// the MCP service account; callers select the affected owner/veterinarian through tool arguments.
+app.MapMcp("/mcp");
 
 app.Run();
 

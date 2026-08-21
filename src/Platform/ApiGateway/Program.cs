@@ -97,7 +97,7 @@ app.MapGet("/openapi", () => Results.Ok(new
     {
         endpoint = "/mcp",
         documentation = "README.md at the repository root",
-        note = "MCP uses JSON-RPC over Streamable HTTP and is not described by OpenAPI."
+        note = "Trusted anonymous MCP endpoint using JSON-RPC over Streamable HTTP; not described by OpenAPI."
     }
 }));
 

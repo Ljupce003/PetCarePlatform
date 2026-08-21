@@ -12,7 +12,17 @@ The API Gateway, Keycloak, Consul, Kafka, MCP server, frontend, tests, and docum
 
 ## Architecture
 
+
+### Архитектурен дијаграм
+
+![PetCare Platform architecture](docs/architecture/petcare-platform-architecture.svg)
+
+[Отвори и преземи](docs/architecture/index.html) · [Editable SVG](docs/architecture/petcare-platform-architecture.svg) · [PNG export](docs/architecture/petcare-platform-architecture.png)
+
+## 3. Domain-Driven Design
+
 ![PetCare Platform architecture](docs/architecture/petcare-platform-architecture.png)
+
 
 Runtime source is grouped under `src/`, while verification code and generated contracts live under `tests/`:
 
@@ -37,8 +47,8 @@ Every business service uses the same `Api`, `Application`, `Domain`, and `Infras
 
 The main integrations are:
 
-- YARP provides one authenticated entry point.
-- Keycloak issues user JWTs and the Appointment service client-credentials token.
+- YARP protects the REST service routes; the deliberately trusted `/mcp` route is anonymous.
+- Keycloak issues user JWTs plus client-credentials tokens for Appointment and the privileged MCP service account.
 - Appointment resolves Pet Service through Consul and calls its ownership ACL endpoint.
 - Appointment publishes lifecycle events to Kafka.
 - Treatment consumes the events idempotently and creates owner/veterinarian notifications.
@@ -119,27 +129,15 @@ Expected final output includes an Appointment ID and a Kafka notification ID.
 The easiest UI test is Visual Studio Code with GitHub Copilot Agent mode. A ready-to-copy configuration is stored in `src/Platform/MCPServer/mcp.json`. Keep it there as the project template and add its contents to the VS Code user MCP configuration so the repository does not need a root `.vscode` folder.
 
 1. Start the Docker stack.
-2. Obtain an owner token and copy it to the clipboard:
-
-```powershell
-$token = (Invoke-RestMethod -Method Post `
-  -Uri 'http://localhost:8080/realms/petcare/protocol/openid-connect/token' `
-  -ContentType 'application/x-www-form-urlencoded' `
-  -Body @{grant_type='password'; client_id='petcare-demo'; username='owner1'; password='Owner123!'}
-).access_token
-$token | Set-Clipboard
-```
-
-3. In VS Code, run **MCP: Open User Configuration** from the Command Palette.
-4. Copy the `inputs` and `servers.petcare` configuration from `src/Platform/MCPServer/mcp.json` into the opened user `mcp.json`. Merge the entries if that file already contains other MCP servers.
-5. Run **MCP: List Servers**, select `petcare`, and start it.
-6. Paste the token when VS Code asks for `petcare-token`.
-7. Open Copilot Chat in Agent mode, enable the PetCare tools, and try:
+2. In VS Code, run **MCP: Open User Configuration** from the Command Palette.
+3. Copy the `servers.petcare` configuration from `src/Platform/MCPServer/mcp.json` into the opened user `mcp.json`. Merge it if that file already contains other MCP servers.
+4. Run **MCP: List Servers**, select `petcare`, and start it.
+5. Open Copilot Chat in Agent mode, enable the PetCare tools, and try:
    - `Get the pet with id 44444444-4444-4444-4444-444444444444.`
    - `List open appointment slots.`
    - `Show upcoming appointments for owner 33333333-3333-3333-3333-333333333333.`
 
-The demo token expires after 15 minutes. Generate and paste a new token if the MCP server returns `401`.
+The MCP endpoint intentionally performs no caller authentication. It obtains a Keycloak client-credentials token for the privileged `mcp-server` service account and supplies explicit owner and veterinarian IDs from tool arguments when an operation is user-specific. Treat ports `7000` and `7001` as trusted local-development endpoints: anyone who can reach `/mcp` can read or change any data exposed by its tools.
 
 The server currently exposes 13 tools:
 
@@ -147,7 +145,7 @@ The server currently exposes 13 tools:
 - Appointment: `find_available_veterinarians`, `get_upcoming_appointments`, `search_clinics`, `search_available_slots`, `find_open_appointment_slots`, `create_available_slot`
 - Treatment: `get_medical_history`, `get_vaccination_history`, `get_next_vaccination`, `record_medical_examination`, `record_vaccination`
 
-Other MCP-capable applications can use the same Gateway URL, `http://localhost:7000/mcp`, with the `Authorization: Bearer <token>` header.
+Other MCP-capable applications can use the same Gateway URL, `http://localhost:7000/mcp`, without an authorization header.
 
 VS Code MCP setup reference: <https://code.visualstudio.com/docs/agent-customization/mcp-servers>
 
